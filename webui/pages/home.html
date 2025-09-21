@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目选择</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/home.css">
+</head>
+<body>
+    <div id="global-loader" class="global-loader hidden">
+        <div class="spinner"></div>
+    </div>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">项目总览</h1>
+                <div class="sidebar-actions">
+                    <button id="open-create" class="primary-button primary-button--compact" type="button">新建项目</button>
+                    <button id="refresh-projects" class="text-button" type="button">刷新</button>
+                </div>
+            </div>
+            <div class="sidebar-search">
+                <input id="project-search" type="search" placeholder="搜索项目 / 主题">
+            </div>
+            <div id="sidebar-placeholder" class="sidebar-loading">正在加载项目...</div>
+            <div id="project-list" class="sidebar-scroll"></div>
+        </aside>
+        <main class="main-content">
+            <div id="message-bar" class="message-bar hidden"></div>
+
+            <section id="welcome-panel" class="welcome">
+                <h2>欢迎使用 EZPPT 控制台</h2>
+                <p>在左侧选择一个项目即可查看大纲、生成进度，以及实时的 HTML 幻灯片生成状态。</p>
+            </section>
+
+            <section id="project-panel" class="panel hidden">
+                <div class="panel-header">
+                    <div>
+                        <h2 id="project-title"></h2>
+                        <div id="project-subtitle" class="panel-subtitle"></div>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="open-preview" class="primary-button" type="button">打开预览</button>
+                        <button id="restart-project" class="ghost-button" type="button">重新生成项目</button>
+                        <button id="refresh-detail" class="ghost-button" type="button">刷新状态</button>
+                    </div>
+                </div>
+                <div class="panel-hint" id="project-status-chip"></div>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <span class="info-label">主题 Topic</span>
+                        <span class="info-value" id="project-topic">-</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">受众 Audience</span>
+                        <span class="info-value" id="project-audience">-</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">风格 Style</span>
+                        <span class="info-value" id="project-style">-</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">预计页数</span>
+                        <span class="info-value" id="project-pages">-</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">项目状态</span>
+                        <span class="info-value" id="project-status">-</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">创建时间</span>
+                        <span class="info-value" id="project-created">-</span>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div id="project-progress" class="progress-fill" style="width: 0%;"></div>
+                </div>
+                <div class="progress-stats" id="project-progress-stats"></div>
+                <div class="export-actions">
+                    <div class="export-group">
+                        <button id="export-pdf" class="ghost-button" type="button">导出为 PDF</button>
+                        <button id="download-pdf" class="ghost-button" type="button" disabled>下载 PDF</button>
+                    </div>
+                    <div class="export-group">
+                        <button id="export-pptx" class="ghost-button" type="button">导出为 PPTX</button>
+                        <button id="download-pptx" class="ghost-button" type="button" disabled>下载 PPTX</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="outline-panel" class="panel hidden">
+                <div class="panel-header">
+                    <div>
+                        <h3>大纲预览</h3>
+                        <p class="panel-hint">展示系统为该项目生成的章节结构与幻灯片要点。</p>
+                    </div>
+                    <button id="toggle-outline" class="ghost-button" type="button">折叠</button>
+                </div>
+                <div id="outline-content" class="outline-content"></div>
+            </section>
+
+            <section id="slides-panel" class="panel hidden">
+                <div class="panel-header">
+                    <div>
+                        <h3>幻灯片生成进度</h3>
+                        <p class="panel-hint">每张幻灯片的实时状态与预览入口。</p>
+                    </div>
+                    <button id="refresh-slides" class="ghost-button" type="button">刷新列表</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>章节</th>
+                                <th>幻灯片 ID</th>
+                                <th>主题</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slides-table-body">
+                            <tr><td colspan="6" class="table-empty">请选择项目查看幻灯片列表</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="create-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新建项目</h2>
+                <button id="close-create" class="text-button" type="button">关闭</button>
+            </div>
+            <form id="create-form" class="modal-form">
+                <label for="create-topic">
+                    项目主题
+                    <input id="create-topic" name="topic" type="text" placeholder="请输入项目主题" required maxlength="1000">
+                </label>
+                <label for="create-audience">
+                    目标受众
+                    <input id="create-audience" name="audience" type="text" placeholder="如：产品部门" value="大众" maxlength="50">
+                </label>
+                <label for="create-style">
+                    演示风格
+                    <input id="create-style" name="style" type="text" placeholder="如：简洁明了" value="简洁明了" maxlength="50">
+                </label>
+                <label for="create-pages">
+                    预计页数
+                    <input id="create-pages" name="page_num" type="number" min="1" max="100" value="10" required>
+                </label>
+                <label for="create-reference">
+                    参考资料（可选）
+                    <textarea id="create-reference" name="reference_content" placeholder="可粘贴现有文案、要点或网址"></textarea>
+                </label>
+                <div class="modal-actions">
+                    <button id="cancel-create" class="ghost-button" type="button">取消</button>
+                    <button id="create-submit" class="primary-button" type="submit">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML 预览器</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/preview.css">
+</head>
+<body>
+    <main class="main-view" id="main-view">
+        <iframe id="main-frame" src="about:blank"></iframe>
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- 进度指示器 -->
+        <div class="progress-indicator" id="progress-indicator">
+            <span id="file-counter">0 / 0</span>
+        </div>
+
+        <!-- 编辑控件 -->
+        <div class="edit-controls" id="edit-controls">
+            <button id="btn-edit" class="btn">编辑</button>
+            <button id="btn-save" class="btn btn-success" style="display: none;">保存</button>
+        </div>
+    </main>
+
+    <nav class="sidebar" id="file-sidebar">
+        <div class="sidebar-header">
+            <!-- 返回按钮 -->
+            <a href="/" class="back-to-home" title="返回项目列表">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                </svg>
+            </a>
+            <!-- 标题 -->
+            <h2 class="sidebar-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z" />
+                </svg>
+                文档目录
+            </h2>
+            <!-- 关闭按钮 -->
+            <button class="sidebar-close" id="sidebar-close" title="关闭">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                </svg>
+            </button>
+        </div>
+        <!-- 文件列表容器 -->
+        <div class="file-list" id="file-list"></div>
+    </nav>
+
+    <!-- 侧边切换按钮 -->
+    <button class="sidebar-toggle" id="sidebar-toggle" title="展开目录">
+        <div class="toggle-icon closed" id="toggle-icon">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.5" fill="none" />
+            </svg>
+        </div>
+        <div class="status-dot" id="status-dot"></div>
+    </button>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/preview.js"></script>
+</body>
+</html>
