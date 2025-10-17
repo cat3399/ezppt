@@ -37,6 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshDetail: document.getElementById('refresh-detail'),
         refreshSlides: document.getElementById('refresh-slides'),
         openPreview: document.getElementById('open-preview'),
+        projectActionsToggle: document.getElementById('project-actions-toggle'),
+        projectActionsMenu: document.getElementById('project-actions-menu'),
         restartProject: document.getElementById('restart-project'),
         exportPdf: document.getElementById('export-pdf'),
         downloadPdf: document.getElementById('download-pdf'),
@@ -68,6 +70,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const showLoader = (visible = true) => {
         elements.loader.classList.toggle('hidden', !visible);
     };
+
+    let actionMenuVisible = false;
+
+    const setActionMenuVisibility = (visible) => {
+        if (!elements.projectActionsMenu || !elements.projectActionsToggle) {
+            return;
+        }
+        actionMenuVisible = visible;
+        elements.projectActionsMenu.classList.toggle('hidden', !visible);
+        elements.projectActionsToggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+    };
+
+    const setActionMenuEnabled = (enabled) => {
+        if (!elements.projectActionsToggle) {
+            return;
+        }
+        elements.projectActionsToggle.disabled = !enabled;
+        if (!enabled) {
+            setActionMenuVisibility(false);
+            elements.projectActionsToggle.setAttribute('aria-expanded', 'false');
+        }
+    };
+
+    const toggleActionMenu = () => {
+        if (!elements.projectActionsToggle || elements.projectActionsToggle.disabled) {
+            return;
+        }
+        setActionMenuVisibility(!actionMenuVisible);
+    };
+
+    setActionMenuEnabled(false);
 
     const resetCreateFormState = () => {
         elements.createSubmit.disabled = false;
@@ -280,14 +313,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const pptxStatus = project.pptx_status || 'pending';
         const pdfGenerating = pdfStatus === 'generating';
         const pptxGenerating = pptxStatus === 'generating';
+        const pdfReady = pdfStatus === 'completed';
+        const pptxReady = pptxStatus === 'completed';
 
         elements.exportPdf.disabled = !projectReady || pdfGenerating;
         elements.exportPdf.textContent = pdfGenerating ? '导出中...' : '导出为 PDF';
         elements.exportPptx.disabled = !projectReady || pptxGenerating;
         elements.exportPptx.textContent = pptxGenerating ? '导出中...' : '导出为 PPTX';
 
-        elements.downloadPdf.disabled = pdfStatus !== 'completed';
-        elements.downloadPptx.disabled = pptxStatus !== 'completed';
+        elements.downloadPdf.disabled = !pdfReady;
+        elements.downloadPdf.setAttribute('aria-disabled', pdfReady ? 'false' : 'true');
+        elements.downloadPdf.title = pdfReady ? '' : 'PDF 尚未生成完成';
+        elements.downloadPptx.disabled = !pptxReady;
+        elements.downloadPptx.setAttribute('aria-disabled', pptxReady ? 'false' : 'true');
+        elements.downloadPptx.title = pptxReady ? '' : 'PPTX 尚未生成完成';
+
+        setActionMenuEnabled(projectReady || pdfReady || pptxReady);
     };
 
     const renderSlides = (slides) => {
@@ -320,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.selectedProjectId = projectId;
         state.selectedProjectName = null;
         elements.restartProject.disabled = false;
+        setActionMenuEnabled(true);
         Array.from(elements.projectList.children).forEach((node) => {
             node.classList.toggle('active', node.dataset.projectId === projectId);
         });
@@ -358,11 +400,13 @@ document.addEventListener('DOMContentLoaded', () => {
             attachStatusChip(elements.projectStatusChip, project.status);
             elements.openPreview.disabled = !(stats && stats.completed > 0);
             updateExportButtons(project);
+            setActionMenuEnabled(true);
             return project;
         } catch (error) {
             console.error(error);
             showMessage(error.message, 'error');
             state.projectDetail = null;
+            setActionMenuEnabled(false);
             return null;
         }
     };
@@ -475,19 +519,41 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerExport('pptx');
     });
     elements.downloadPdf.addEventListener('click', () => {
-        if (elements.downloadPdf.disabled) return;
+        if (!state.projectDetail || state.projectDetail.pdf_status !== 'completed') {
+            showMessage('PDF 尚未生成完成，无法下载', 'error');
+            return;
+        }
         const url = buildDownloadUrl('pdf');
         if (url) {
             window.open(url, '_blank');
         }
     });
     elements.downloadPptx.addEventListener('click', () => {
-        if (elements.downloadPptx.disabled) return;
+        if (!state.projectDetail || state.projectDetail.pptx_status !== 'completed') {
+            showMessage('PPTX 尚未生成完成，无法下载', 'error');
+            return;
+        }
         const url = buildDownloadUrl('pptx');
         if (url) {
             window.open(url, '_blank');
         }
     });
+    elements.projectActionsToggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleActionMenu();
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!actionMenuVisible) {
+            return;
+        }
+        const target = event.target;
+        if (target instanceof Element && (target.closest('.action-menu__dropdown') || target === elements.projectActionsToggle)) {
+            return;
+        }
+        setActionMenuVisibility(false);
+    });
+
     elements.restartProject.addEventListener('click', async () => {
         if (!state.selectedProjectId || elements.restartProject.disabled) {
             return;

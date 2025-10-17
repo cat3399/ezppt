@@ -40,11 +40,20 @@
                         <h2 id="project-title"></h2>
                         <div id="project-subtitle" class="panel-subtitle"></div>
                     </div>
-                    <div class="panel-actions">
-                        <button id="open-preview" class="primary-button" type="button">打开预览</button>
-                        <button id="restart-project" class="ghost-button" type="button">重新生成项目</button>
-                        <button id="refresh-detail" class="ghost-button" type="button">刷新状态</button>
+                <div class="panel-actions">
+                    <button id="open-preview" class="primary-button" type="button">打开预览</button>
+                    <button id="refresh-detail" class="ghost-button" type="button">刷新状态</button>
+                    <div class="action-menu">
+                        <button id="project-actions-toggle" class="ghost-button action-menu__trigger" type="button" aria-haspopup="true" aria-expanded="false">更多操作</button>
+                        <div id="project-actions-menu" class="action-menu__dropdown hidden" role="menu">
+                            <button id="restart-project" class="action-menu__item" type="button" role="menuitem">重新生成项目</button>
+                            <button id="export-pdf" class="action-menu__item" type="button" role="menuitem">导出为 PDF</button>
+                            <button id="download-pdf" class="action-menu__item" type="button" role="menuitem" disabled>下载 PDF</button>
+                            <button id="export-pptx" class="action-menu__item" type="button" role="menuitem">导出为 PPTX</button>
+                            <button id="download-pptx" class="action-menu__item" type="button" role="menuitem" disabled>下载 PPTX</button>
+                        </div>
                     </div>
+                </div>
                 </div>
                 <div class="panel-hint" id="project-status-chip"></div>
                 <div class="info-grid">
@@ -77,16 +86,6 @@
                     <div id="project-progress" class="progress-fill" style="width: 0%;"></div>
                 </div>
                 <div class="progress-stats" id="project-progress-stats"></div>
-                <div class="export-actions">
-                    <div class="export-group">
-                        <button id="export-pdf" class="ghost-button" type="button">导出为 PDF</button>
-                        <button id="download-pdf" class="ghost-button" type="button" disabled>下载 PDF</button>
-                    </div>
-                    <div class="export-group">
-                        <button id="export-pptx" class="ghost-button" type="button">导出为 PPTX</button>
-                        <button id="download-pptx" class="ghost-button" type="button" disabled>下载 PPTX</button>
-                    </div>
-                </div>
             </section>
 
             <section id="outline-panel" class="panel hidden">
