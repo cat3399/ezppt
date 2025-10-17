@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 from typing import List, Optional
-from sqlmodel import Session, and_, select, update
+from sqlmodel import Session, and_, delete, select, update
 
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -17,11 +17,27 @@ def db_add_project(project: Project) -> bool:
         with Session(engine) as sess:
             sess.add(project)
             sess.commit()
+            logger.info(f"已新增project: {project}")
             return True
     except Exception as exc:
         logger.error(f"新增project时出错: {exc}")
         return False
 
+def db_del_project(project_id: str) -> bool:
+    engine = get_engine()
+    try:
+        with Session(engine) as sess:
+            stmt = delete(Project).where(Project.project_id == project_id)
+            result = sess.exec(stmt)
+            sess.commit()
+            if result.rowcount == 0:
+                logger.warning(f"未找到id为 {project_id} 的project")
+                return False
+            logger.info(f"已删除id为 {project_id} 的project")
+            return True
+    except Exception as exc:
+        logger.error(f"删除project时出错: {exc}")
+        return False
 
 def db_get_project_status(project_id: str) -> str:
     engine = get_engine()

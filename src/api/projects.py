@@ -169,6 +169,13 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         return {"project_id": pid, "project_name": pname, "status": pstatus}
     raise HTTPException(status_code=500, detail="创建项目失败")
 
+# 删除某个项目
+@router.delete("/api/projects/{project_id}")
+def delete_project(project_id: str):
+    project_repo.db_del_project(project_id)
+    outline_repo.db_del_outline(project_id)
+    outline_repo.db_del_outline_slides(project_id)
+    return {"message": "项目删除成功"}
 
 @router.post("/api/save")
 def save_project_file(req: SaveFileRequest):
