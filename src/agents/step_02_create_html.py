@@ -1,8 +1,5 @@
-from urllib.parse import urlparse
 import sys
 from pathlib import Path
-import requests
-import json
 
 # 将项目根目录添加到 Python 路径
 project_root = Path(__file__).parent.parent.parent
@@ -10,13 +7,13 @@ sys.path.insert(0, str(project_root))
 
 from src.agents.step_01_create_outline import create_outline
 from src.services.chat.chat import text_chat
-from src.services.search.image_search import image_search
 from src.utils.help_utils import response2json, parse_outline, get_prompt, extract_html
 from config.base_config import OUTLINE_LLM_CONFIG, PPT_LLM_CONFIG
 from config.logging_config import logger
 from src.models.outline_model import Outline
 
-create_html_ppt = get_prompt("tmp")
+create_html_ppt = get_prompt("create_html_ppt")
+create_html_ppt_with_image = get_prompt("create_html_ppt_with_image")
 
 
 def _format_slides_as_reference_html(slides: list) -> str:
@@ -32,9 +29,7 @@ def _format_slides_as_reference_html(slides: list) -> str:
     for slide in slides:
         if slide.get("html_content"):
             content_list.append(
-                f"第 {slide['slide_id']}节\n"
-                f"{'-'*5}\n"
-                f"{slide['html_content']}"
+                f"第 {slide['slide_id']}节\n" f"{'-'*5}\n" f"{slide['html_content']}"
             )
 
     if not content_list:
@@ -44,6 +39,7 @@ def _format_slides_as_reference_html(slides: list) -> str:
     body = "\n\n".join(content_list)
 
     return header + body
+
 
 def create_html(
     outline_config: Outline, target_id: str, llm_config=OUTLINE_LLM_CONFIG
@@ -83,23 +79,28 @@ def create_html(
     #     print("有参考的内容",reference_html_content[:100])
 
     images = outline_config.images.get(target_id, {})
+    # logger.info(f"images: {images}")
     imgs_info = ""
-    if images:
+    if images == {}:
+        html_prompt = create_html_ppt.format(
+            outline=parse_outline(outline_config.outline_json),
+            target_id=target_id,
+            style_reference_html=style_reference_html,
+            layout_reference_html=layout_reference_html,
+        )
+    else:
         for k, value in images.items():
             imgs_info += f"""\n
             图片路径: {k}  图片来源的标题: {value.title}, 图片来源的简介: {value.content}, 图片链接: {value.img_url[:200]} 分辨率: {value.height}x{value.width}, 描述: {value.description}
             """
             # logger.info(f"图片提示词:{imgs_info}")
-    else:
-        imgs_info = "无任何图片"
-        # logger.info(imgs_info)
-    html_prompt = create_html_ppt.format(
-        outline=parse_outline(outline_config.outline_json),
-        target_id=target_id,
-        imgs_info=imgs_info,
-        style_reference_html=style_reference_html,
-        layout_reference_html=layout_reference_html,
-    )
+        html_prompt = create_html_ppt_with_image.format(
+            outline=parse_outline(outline_config.outline_json),
+            target_id=target_id,
+            imgs_info=imgs_info,
+            style_reference_html=style_reference_html,
+            layout_reference_html=layout_reference_html,
+        )
     # html_prompt = create_html_ppt.format(outline=parse_outline(outline_config.outline_json), target_id=target_id)
     if target_id == "2.2":
         # print(html_prompt)

@@ -58,23 +58,26 @@ def html2office(
         effective_limit = max_concurrent_tasks or base_config.PPT_API_LIMIT
 
         if to_pdf or to_pptx:
-            ok = asyncio.run(
-                generate_multiple_pdfs(
-                    pdf_conversion_tasks,
-                    max_concurrent_tasks=effective_limit,
-                    timeout=timeout,
+            if not merged_pdf_path.exists():
+                ok = asyncio.run(
+                    generate_multiple_pdfs(
+                        pdf_conversion_tasks,
+                        max_concurrent_tasks=effective_limit,
+                        timeout=timeout,
+                    )
                 )
-            )
-            if ok:
-                merge_pdfs(
-                [str(temp_pdf_path / pdf_file) for pdf_file in pdf_file_names],
-                str(merged_pdf_path),
-            )
-                project_repo.db_update_project(project_id, new_pdf_status=Status.completed)
+                if ok:
+                    merge_pdfs(
+                    [str(temp_pdf_path / pdf_file) for pdf_file in pdf_file_names],
+                    str(merged_pdf_path),
+                )
+                    project_repo.db_update_project(project_id, new_pdf_status=Status.completed)
+                else:
+                    project_repo.db_update_project(project_id, new_pdf_status=Status.failed)
             else:
-                project_repo.db_update_project(project_id, new_pdf_status=Status.failed)
+                logger.info(f"PDF文件已存在: {merged_pdf_path}")
+                project_repo.db_update_project(project_id, new_pdf_status=Status.completed)
             shutil.rmtree(temp_pdf_path, ignore_errors=True)
-
         if to_pptx:
             ok = convert_pdf_to_pptx(
                 pdf_path=str(merged_pdf_path), pptx_path=str(output_pptx_path)

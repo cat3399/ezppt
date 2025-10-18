@@ -8,8 +8,10 @@
 *   **大纲**: <<{outline}>>
 *   **需要生成的章节**: <<{target_id}>>
 *   **提供的图片(imgs_info)**: <<{imgs_info}>>
-*   **用作参考的html文件内容(reference_html)**: <<{reference_html}>>
-
+*   **全局风格参考 (style_reference_html)**: `<<{style_reference_html}>>` 
+    *   *说明: 这是第一章的某个代表性 HTML 文件，作为全局的“品牌视觉识别手册 (VI Manual)”。**你必须从此文件中提取设计令牌**。*
+*   **章节布局参考 (layout_reference_html)**: `<<{layout_reference_html}>>` 
+    *   *说明: 这是同一章节中，紧邻的前一个章节的 HTML 文件（如果 target_id 是本章第一节，则此项为空）。它仅作为“布局灵感参考”，而非“布局模板”。**用于启发，而非复制**。*
 ### **1. 基础技术规范 (The Foundation)**
 
 这些是不可违背的硬性规则。
@@ -24,26 +26,40 @@
 
 *   **技术栈与格式 (Tech Stack & Format)**
     *   **格式**: 单个 HTML 文件，所有 CSS 和 JS 必须内联。
-    *   **图片**: **禁止**使用 Base64 格式。若用户提供图片，使用其本地路径；若未提供，则不使用。
+    *   **图片**: **禁止**使用 Base64 格式。仅仅允许使用用户提供的本地图片
     *   **图表**: 仅在可视化数值数据时，使用 Chart.js 或 ECharts (通过 CDN 引入)。
     *   **视觉设计**: 禁止使用任何动画,如css或者js动画。不要在任何地方使用阴影,发光效果,光源,动效,磨砂玻璃效果,悬停等等高级设计。不要对文字进行任何渐变效果装饰。严禁在背景的四角,使用例如圆环,圆角边框等装饰元素。
 
 ---
 
-### **2. 核心原则：风格继承 vs 结构创新 (Core Principle: Inherit Style vs. Innovate Structure)**
-这是你工作的**最高指导原则**。你必须将 `reference_html` 视为一份**只读的“品牌视觉识别手册” (VI Manual)**，而**绝非一个“布局模板” (Layout Template)**。你的任务是在风格和结构之间建立一道思想上的**“防火墙”**。
 
-#### **第一步：风格提取 (Strict Style Extraction)**
+#### **第一阶段：严格的风格提取 (Strict Style Extraction)**
 
-在开始任何设计之前，你必须首先解析 `reference_html`，并仅提取以下**原子化的设计令牌 (Design Tokens)**。
+在开始任何设计之前，你必须首先将 `style_reference_html` 视为一份**只读的“品牌视觉识别手册” (VI Manual)**。解析它，并**仅**提取以下**原子化的设计令牌 (Design Tokens)**：
 
-1.  **色彩体系 (Color Palette)**:
-    *   画布背景色、正文颜色、主标题颜色、强调色、辅助背景色。
-2.  **字体系统 (Typography System)**:
-    *   字体族 (Google Fonts 名称)、各级标题/正文/注释的 `font-size` 和 `font-weight`。不要对文字进行渐变处理。
-3.  **微观元素 (Micro-elements)**:
-    *   边框的 `border-radius`, `border-width`, `border-color`。
-    *   统一的 `padding` 和 `gap` 值。
+1.  **色彩体系 (Color Palette)**: 画布背景色、正文颜色、主标题颜色、强调色、辅助背景色。
+2.  **字体系统 (Typography System)**: 字体族 (Google Fonts 名称)、各级标题/正文/注释的 `font-size` 和 `font-weight`。
+3.  **微观元素 (Micro-elements)**: 边框的 `border-radius`, `border-width`, `border-color`，以及统一的 `padding` 和 `gap` 值。
+
+**此阶段提取的风格是全局性的，必须在后续所有设计中严格遵守。**
+
+#### **第二阶段：创造性的布局决策 (Creative Layout Decision)**
+
+**这是体现你设计能力的关键。** 现在，忘记所有参考文件的布局。深入分析**新章节的内容 (`target_id` 的内容)**，并基于以下设计原则，为其量身打造一个全新的、最合适的布局。
+
+*   **内容为王 (Content is King)**: 你的布局必须服务于内容。
+    *   如果内容是一个**强有力的结论或引言**，考虑使用**巨型字体排版 (Kinetic Typography)**，让文字本身成为视觉主角。
+    *   如果内容是 **2-4 个并列的要点**，可以采用**优雅的分栏 (Multi-column)** 或**模块化的网格 (Bento-like Grid)** 来清晰地组织它们。
+    *   如果内容是**层级分明**的（标题-描述），则通过**强烈的字号和字重对比**，结合**非对称的留白**来构建视觉流。
+
+*   **寻求连贯，而非雷同 (Strive for Cohesion, Not Conformity)**:
+    *   如果提供了 `layout_reference_html`（即同一章节的前一页），请分析其**宏观布局结构**（例如，它是双栏还是三栏？是居中大标题还是靠左？）。
+    *   你的任务是**在保持章节内视觉节奏感的同时，为当前内容创造一个更优或不同的布局**。例如，如果前一页是双栏，而当前内容有三个要点，你可以创新地使用三栏或“品”字形布局。
+    *   **严禁像素级地复制 `layout_reference_html` 的布局。** 它只用于启发，确保同一章节内的页面风格有一定延续性，而不是看起来完全不相关。
+
+*   **拥抱留白 (Embrace White Space)**: 用它来分割区域、引导视线、创造焦点，让设计感觉从容、高级。
+
+*   **建立清晰的视觉层次 (Build Clear Hierarchy)**: 观众第一眼应该看到什么？第二眼呢？使用你在**第一阶段**提取的**设计令牌**（特别是强调色、大字号、粗字体）来突出核心信息。
 
 #### **第二步：独立的布局决策 (Independent Layout Decision)**
 

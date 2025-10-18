@@ -101,6 +101,7 @@ def list_projects():
                 "style": project.style,
                 "page_num": project.page_num,
                 "status": project.status,
+                "enable_img_search": project.enable_img_search,
                 "pdf_status": project.pdf_status,
                 "pptx_status": project.pptx_status,
                 "created_at": project.create_time.isoformat(),
@@ -146,6 +147,7 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
     style = req.style
     page_num = req.page_num
     reference_content = req.reference_content
+    enable_img_search = req.enable_img_search
 
     project = Project(
         project_id=project_id,
@@ -154,6 +156,7 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         audience=audience,
         style=style,
         page_num=page_num,
+        enable_img_search=enable_img_search,
         status="pending",
         create_time=now_time,
     )
@@ -164,6 +167,7 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         audience=audience,
         style=style,
         page_num=page_num,
+        enable_img_search=enable_img_search,
         reference_content=reference_content
     )
 
@@ -179,7 +183,12 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         logger.info(f"项目 {pid} 写入数据库成功")
         background_tasks.add_task(create_project_execute, outline_config)
         pstatus = "start"
-        return {"project_id": pid, "project_name": pname, "status": pstatus}
+        return {
+            "project_id": pid,
+            "project_name": pname,
+            "status": pstatus,
+            "enable_img_search": enable_img_search,
+        }
     raise HTTPException(status_code=500, detail="创建项目失败")
 
 # 删除某个项目
@@ -321,6 +330,7 @@ def get_project_detail(project_id: str):
             "style": project.style,
             "page_num": project.page_num,
             "status": project.status,
+            "enable_img_search": project.enable_img_search,
             "pdf_status": project.pdf_status,
             "pptx_status": project.pptx_status,
             "created_at": project.create_time.isoformat(),

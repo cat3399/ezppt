@@ -18,6 +18,7 @@ class Project(SQLModel, table=True):
     audience: str = "大众"
     style: str = "简洁明了"
     page_num: int = 10
+    enable_img_search: bool = False
     pdf_status: str = Status.pending
     pptx_status: str = Status.pending
 
@@ -26,5 +27,6 @@ class ProjectIn(BaseModel):
     audience: str = Field(default="大众", max_length=50)
     style: str = Field(default="简洁明了", max_length=50)
     page_num: int = Field(default=10, ge=1, le=100)
+    enable_img_search: bool = Field(default=False)
     reference_content: str = Field(default="")
 

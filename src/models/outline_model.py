@@ -12,7 +12,8 @@ class Outline(SQLModel, table=True):
     audience: str = "大众"
     style: str = "简洁明了"
     page_num: int = 10
-    
+    enable_img_search: bool = False
+
     # Outline 级别的数据
     global_visual_suggestion: dict = Field(default_factory=dict, sa_type=JSON)
     outline_json: dict = Field(default_factory=dict, sa_type=JSON)

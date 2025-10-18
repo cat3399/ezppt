@@ -56,17 +56,18 @@ def _update_outline_config_html_content(
 def _create_html_with_image(
     outline_config: Outline, visual_suggestions: dict, target_id: str
 ) -> str:
-    # if visual_suggestions[target_id] != {}:
-    #     q = visual_suggestions[target_id]["search_keywords"]
-    #     d = visual_suggestions[target_id]["image_description"]
-    #     img_result = get_pic(query=q, description=d)
-    #     images_temp = {
-    #         Path("..", *(Path(k).parts[-2:])).as_posix(): v for k, v in img_result.items()
-    #     }
-    #     outline_config.images[target_id] = images_temp
-    #     # print(outline_config.images)
-    # else:
-    #     pass
+    project_name = project_repo.db_get_project(outline_config.project_id).project_name
+    img_base_path = project_root / "data" / "projects" / project_name / "images"
+    logger.info(visual_suggestions)
+    if visual_suggestions != {}:
+        q = visual_suggestions["search_keywords"]
+        d = visual_suggestions["image_description"]
+        img_result = get_pic(query=q, description=d, img_base_path=str(img_base_path))
+        images_temp = {
+            Path("..", *(Path(k).parts[-2:])).as_posix(): v for k, v in img_result.items()
+        }
+        outline_config.images[target_id] = images_temp
+        # print(outline_config.images)
     html_content = create_html(
         outline_config=outline_config, target_id=target_id, llm_config=base_config.PPT_LLM_CONFIG
     )
@@ -81,16 +82,23 @@ def _generate_chapter_slide_html(outline_config: Outline, slide_id: str) -> str:
     visual_suggestions = {}
     for chapter in outline_config.outline_json["chapters"]:
         for slide in chapter.get("slides", []):
+            # logger.info(slide)
             if str(slide["slide_id"]) == str(slide_id):
-                visual_suggestions = slide.get("visual_suggestions", {})
+                if slide_id.split(".")[0] == "1":
+                    visual_suggestions = outline_config.global_visual_suggestion
+                else:
+                    visual_suggestions = slide.get("visual_suggestion", {})
                 break
-
-    html_content = _create_html_with_image(
-        outline_config=outline_config,
-        visual_suggestions=visual_suggestions,
-        target_id=slide_id,
-    )
-
+    if outline_config.enable_img_search and visual_suggestions != {}:
+        html_content = _create_html_with_image(
+            outline_config=outline_config,
+            visual_suggestions=visual_suggestions,
+            target_id=slide_id,
+        )
+    else:
+        html_content = create_html(
+            outline_config=outline_config, target_id=slide_id, llm_config=base_config.PPT_LLM_CONFIG
+        )
     return html_content
 
 
@@ -147,6 +155,8 @@ def create_project_execute(outline_config: Outline):
         "global_visual_suggestion", {}
     )
     outline_config.global_visual_suggestion = global_visual_suggestion
+    if not hasattr(outline_config, "enable_img_search"):
+        outline_config.enable_img_search = False
 
     # 生成并保存大纲到数据库
     outline_config = create_outline(
@@ -208,6 +218,7 @@ def restart_project_execute(project_id):
         audience=outline_config.audience,
         style=outline_config.style,
         page_num=outline_config.page_num,
+        enable_img_search=outline_config.enable_img_search,
         reference_content=outline_config.reference_content,
     )
     _, html_save_dir, _, _ = _get_project_dir(outline_config)
