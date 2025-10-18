@@ -1,0 +1,121 @@
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-sm);
+}
+
+.page-header__meta h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.page-header__meta p {
+    margin: 6px 0 0;
+    color: var(--text-secondary);
+}
+
+.page-header__actions {
+    display: flex;
+    gap: 12px;
+}
+
+.main-container {
+    display: flex;
+    min-height: calc(100vh - 96px);
+}
+
+.config-sidebar {
+    width: 240px;
+    border-right: 1px solid var(--border-soft);
+    background: #f8fafc;
+    padding: 24px 16px;
+}
+
+.group-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.group-tab {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition-speed), border-color var(--transition-speed);
+}
+
+.group-tab:hover {
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.group-tab--active {
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
+.config-content {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+}
+
+.config-form {
+    display: grid;
+    gap: 18px;
+}
+
+.config-item {
+    padding: 18px;
+    border-radius: 14px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-soft);
+}
+
+.config-item__label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.config-item__control {
+    margin-bottom: 8px;
+}
+
+.config-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #ffffff;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.config-input:focus {
+    outline: none;
+    border-color: rgba(37, 99, 235, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.config-item__caption {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.config-empty {
+    padding: 48px;
+    text-align: center;
+    color: var(--text-muted);
+    background: rgba(148, 163, 184, 0.1);
+    border-radius: 12px;
+}

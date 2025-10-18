@@ -153,6 +153,16 @@
     background: #fafbfe;
 }
 
+.page-settings {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.page-settings__button {
+    min-width: 88px;
+}
+
 /* 消息条 */
 .message-bar {
     margin-bottom: 16px;

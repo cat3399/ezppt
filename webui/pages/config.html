@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置管理</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/config.css">
+</head>
+<body>
+    <div id="global-loader" class="global-loader hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="page-header">
+        <div class="page-header__meta">
+            <h1>配置管理</h1>
+            <p>查看并调整运行配置，修改后立即生效。</p>
+        </div>
+        <div class="page-header__actions">
+            <button id="back-home" class="ghost-button" type="button">返回首页</button>
+            <button id="reload-config" class="ghost-button" type="button">重新加载</button>
+            <button id="save-config" class="primary-button" type="button">保存配置</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <aside class="config-sidebar">
+            <nav id="group-tabs" class="group-tabs"></nav>
+        </aside>
+        <section class="config-content">
+            <div id="message-bar" class="message-bar hidden"></div>
+            <form id="config-form" class="config-form"></form>
+        </section>
+    </main>
+
+    <template id="config-item-template">
+        <div class="config-item">
+            <label class="config-item__label"></label>
+            <div class="config-item__control"></div>
+            <div class="config-item__caption"></div>
+        </div>
+    </template>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/config.js"></script>
+</body>
+</html>

@@ -8,7 +8,7 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config.logging_config import logger
-from config.base_config import HTML2OFFICE_MAX_CONCURRENT_TASKS
+import config.base_config as base_config
 from html_convert_office.html2pdf import generate_multiple_pdfs, merge_pdfs
 from html_convert_office.pdf2pptx import convert_pdf_to_pptx
 from src.repository import project_repo
@@ -19,7 +19,7 @@ def html2office(
     project_id: str,
     to_pdf: bool = True,
     to_pptx: bool = True,
-    max_concurrent_tasks: int = HTML2OFFICE_MAX_CONCURRENT_TASKS,
+    max_concurrent_tasks: int | None = None,
     timeout: int = 60,
 ):
     try:
@@ -55,11 +55,13 @@ def html2office(
             for html_file, pdf_file in zip(html_file_names, pdf_file_names)
         ]
 
+        effective_limit = max_concurrent_tasks or base_config.PPT_API_LIMIT
+
         if to_pdf or to_pptx:
             ok = asyncio.run(
                 generate_multiple_pdfs(
                     pdf_conversion_tasks,
-                    max_concurrent_tasks=max_concurrent_tasks,
+                    max_concurrent_tasks=effective_limit,
                     timeout=timeout,
                 )
             )

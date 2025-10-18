@@ -7,10 +7,7 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config.logging_config import logger
-
-APRYSE_LICENSE_KEY = (
-    "demo:1755261440784:606d79bd0300000000e81e8a42f05bd416d3188cf6a2ecb2dbc76dd3ae"
-)
+from config.base_config import APRYSE_LICENSE_KEY
 
 def convert_pdf_to_pptx(pdf_path, pptx_path):
     """使用 Apryse SDK 将 PDF 转换为 PPTX"""

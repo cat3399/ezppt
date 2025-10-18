@@ -9,11 +9,7 @@ import traceback
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.base_config import (
-    OUTLINE_LLM_CONFIG,
-    PPT_LLM_CONFIG,
-    HTML_GENERATION_MAX_WORKERS,
-)
+import config.base_config as base_config
 from config.logging_config import logger
 from src.agents.step_01_create_outline import create_outline
 from src.agents.step_02_create_html import create_html
@@ -72,7 +68,7 @@ def _create_html_with_image(
     # else:
     #     pass
     html_content = create_html(
-        outline_config=outline_config, target_id=target_id, llm_config=PPT_LLM_CONFIG
+        outline_config=outline_config, target_id=target_id, llm_config=base_config.PPT_LLM_CONFIG
     )
     return html_content
 
@@ -154,7 +150,7 @@ def create_project_execute(outline_config: Outline):
 
     # 生成并保存大纲到数据库
     outline_config = create_outline(
-        outline_config=outline_config, llm_config=OUTLINE_LLM_CONFIG
+        outline_config=outline_config, llm_config=base_config.OUTLINE_LLM_CONFIG
     )
 
     ok = outline_repo.db_add_outline(outline_config=outline_config)
@@ -177,7 +173,7 @@ def create_project_execute(outline_config: Outline):
         html_save_dir=html_save_dir,
     )
     chapters_map = outline_config_tmp.outline_json["chapters"]
-    with ThreadPoolExecutor(max_workers=HTML_GENERATION_MAX_WORKERS) as pool:
+    with ThreadPoolExecutor(max_workers=base_config.PPT_API_LIMIT) as pool:
         # 每个 Future 对应一个章节的生成任务
         futures = {
             pool.submit(

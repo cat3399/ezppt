@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from typing import Any
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from datetime import datetime
@@ -10,6 +11,13 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config.logging_config import logger
+from config.base_config import (
+    CONFIG_ITEMS,
+    CONFIG_ITEM_MAP,
+    get_effective_config,
+    get_runtime_overrides,
+    update_runtime_overrides,
+)
 from src.utils.help_utils import time_name
 from src.models.project_model import Project, ProjectIn
 from src.models.outline_model import Outline
@@ -30,6 +38,10 @@ class SaveFileRequest(BaseModel):
     project: str
     file: str
     content: str
+
+
+class ConfigUpdateRequest(BaseModel):
+    updates: dict[str, Any]
 
 
 PROJECTS_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "projects"
@@ -198,6 +210,85 @@ def save_project_file(req: SaveFileRequest):
         raise HTTPException(status_code=500, detail="保存文件失败") from exc
 
     return {"message": "文件保存成功"}
+
+
+@router.get("/api/config")
+def get_config_items():
+    meta = [
+        {
+            "key": item["key"],
+            "label": item.get("label") or item["key"],
+            "type": item.get("type", "text"),
+            "group": item.get("group") or "未分组",
+            "description": item.get("description", ""),
+            "placeholder": item.get("placeholder", ""),
+        }
+        for item in CONFIG_ITEMS
+    ]
+    return {
+        "meta": meta,
+        "values": get_effective_config(),
+        "overrides": get_runtime_overrides(),
+    }
+
+
+@router.post("/api/config")
+def update_config_items(payload: ConfigUpdateRequest):
+    updates = payload.updates or {}
+    sanitized_updates: dict[str, Any] = {}
+    errors = []
+    for key, value in updates.items():
+        if key not in CONFIG_ITEM_MAP:
+            continue
+        item = CONFIG_ITEM_MAP[key]
+        if item.get("type") == "number":
+            try:
+                sanitized_updates[key] = int(value)
+            except (TypeError, ValueError):
+                errors.append(f"{item.get('label', key)} 必须为整数")
+        else:
+            if value is None or value == "":
+                continue
+            sanitized_updates[key] = str(value)
+
+    if errors:
+        raise HTTPException(status_code=400, detail="; ".join(errors))
+
+    if not sanitized_updates:
+        return {
+            "message": "未检测到可保存的配置",
+            "values": get_effective_config(),
+            "overrides": get_runtime_overrides(),
+            "meta": [
+                {
+                    "key": item["key"],
+                    "label": item.get("label") or item["key"],
+                    "type": item.get("type", "text"),
+                    "group": item.get("group") or "未分组",
+                    "description": item.get("description", ""),
+                    "placeholder": item.get("placeholder", ""),
+                }
+                for item in CONFIG_ITEMS
+            ],
+        }
+
+    update_runtime_overrides(sanitized_updates)
+    return {
+        "message": "配置更新成功",
+        "values": get_effective_config(),
+        "overrides": get_runtime_overrides(),
+        "meta": [
+            {
+                "key": item["key"],
+                "label": item.get("label") or item["key"],
+                "type": item.get("type", "text"),
+                "group": item.get("group") or "未分组",
+                "description": item.get("description", ""),
+                "placeholder": item.get("placeholder", ""),
+            }
+            for item in CONFIG_ITEMS
+        ],
+    }
 
 
 @router.get("/api/projects/{project_id}/status")

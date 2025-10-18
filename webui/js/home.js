@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshDetail: document.getElementById('refresh-detail'),
         refreshSlides: document.getElementById('refresh-slides'),
         openPreview: document.getElementById('open-preview'),
+        openConfig: document.getElementById('open-config'),
         projectActionsToggle: document.getElementById('project-actions-toggle'),
         projectActionsMenu: document.getElementById('project-actions-menu'),
         restartProject: document.getElementById('restart-project'),
@@ -593,6 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.projectActionsToggle?.addEventListener('click', (event) => {
         event.stopPropagation();
         toggleActionMenu();
+    });
+
+    elements.openConfig?.addEventListener('click', () => {
+        window.location.href = '/webui/pages/config.html';
     });
 
     document.addEventListener('click', (event) => {
