@@ -8,6 +8,7 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config.logging_config import logger
+from config.base_config import HTML2OFFICE_MAX_CONCURRENT_TASKS
 from html_convert_office.html2pdf import generate_multiple_pdfs, merge_pdfs
 from html_convert_office.pdf2pptx import convert_pdf_to_pptx
 from src.repository import project_repo
@@ -18,7 +19,7 @@ def html2office(
     project_id: str,
     to_pdf: bool = True,
     to_pptx: bool = True,
-    max_concurrent_tasks: int = 10,
+    max_concurrent_tasks: int = HTML2OFFICE_MAX_CONCURRENT_TASKS,
     timeout: int = 60,
 ):
     try:

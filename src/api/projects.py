@@ -14,6 +14,7 @@ from src.utils.help_utils import time_name
 from src.models.project_model import Project, ProjectIn
 from src.models.outline_model import Outline
 from src.repository import project_repo, outline_repo
+from src.repository.transaction_manager import delete_project_with_related
 from src.agents.create_project import (
     create_project_execute,
     restart_project_execute,
@@ -172,9 +173,9 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
 # 删除某个项目
 @router.delete("/api/projects/{project_id}")
 def delete_project(project_id: str):
-    project_repo.db_del_project(project_id)
-    outline_repo.db_del_outline(project_id)
-    outline_repo.db_del_outline_slides(project_id)
+    ok = delete_project_with_related(project_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="项目不存在或删除失败")
     return {"message": "项目删除成功"}
 
 @router.post("/api/save")
@@ -339,13 +340,16 @@ def export_project_to_pdf(project_id: str, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=400, detail="项目未完成,不能导出PDF!")
     if project.pdf_status == Status.completed:
         return {"project_id": project_id, "status": Status.completed}
-    elif project.pdf_status == Status.generating:
+    if project.pdf_status == Status.generating:
         return {"project_id": project_id, "status": Status.generating}
-    else:
-        logger.info(f"开始导出项目 {project_id} 到 PDF")
-        project_repo.db_update_project(project_id, new_pdf_status=Status.generating)
-        background_tasks.add_task(html2office, project_id=project_id, to_pdf = True, to_pptx = False)
+
+    started = project_repo.db_try_start_pdf_export(project_id)
+    if not started:
         return {"project_id": project_id, "status": Status.generating}
+
+    logger.info(f"开始导出项目 {project_id} 到 PDF")
+    background_tasks.add_task(html2office, project_id=project_id, to_pdf = True, to_pptx = False)
+    return {"project_id": project_id, "status": Status.generating}
 
 @router.get("/api/projects/{project_id}/export/pptx")
 def export_project_to_pptx(project_id: str, background_tasks: BackgroundTasks):
@@ -356,10 +360,13 @@ def export_project_to_pptx(project_id: str, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=400, detail="项目未完成,不能导出PPTX!")
     if project.pptx_status == Status.completed:
         return {"project_id": project_id, "status": Status.completed}
-    elif project.pptx_status == Status.generating:
+    if project.pptx_status == Status.generating:
         return {"project_id": project_id, "status": Status.generating}
-    else:
-        logger.info(f"开始导出项目 {project_id} 到 PPTX")
-        project_repo.db_update_project(project_id, new_pptx_status=Status.generating)
-        background_tasks.add_task(html2office, project_id=project_id, to_pdf = True, to_pptx = True)
+
+    started = project_repo.db_try_start_pptx_export(project_id)
+    if not started:
         return {"project_id": project_id, "status": Status.generating}
+
+    logger.info(f"开始导出项目 {project_id} 到 PPTX")
+    background_tasks.add_task(html2office, project_id=project_id, to_pdf = True, to_pptx = True)
+    return {"project_id": project_id, "status": Status.generating}

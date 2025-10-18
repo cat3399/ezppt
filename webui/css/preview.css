@@ -174,16 +174,9 @@ body {
     z-index: 10;
     display: flex;
     gap: 8px;
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-}
-
-#main-frame:hover~.edit-controls,
-.edit-controls:hover,
-.edit-controls.editing {
     opacity: 1;
     transform: translateY(0);
+    transition: all 0.3s ease;
 }
 
 .btn {

@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         frameDoc.body.contentEditable = state.isEditing;
         mainFrame.classList.toggle('editable', state.isEditing);
         editControls.classList.toggle('editing', state.isEditing);
-        btnEdit.textContent = state.isEditing ? '完成' : '编辑';
+        btnEdit.textContent = state.isEditing ? '取消' : '编辑';
         btnEdit.classList.toggle('btn-primary', state.isEditing);
         btnSave.style.display = state.isEditing ? 'inline-block' : 'none';
 

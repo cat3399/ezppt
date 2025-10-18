@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         projectActionsToggle: document.getElementById('project-actions-toggle'),
         projectActionsMenu: document.getElementById('project-actions-menu'),
         restartProject: document.getElementById('restart-project'),
+        deleteProject: document.getElementById('delete-project'),
         exportPdf: document.getElementById('export-pdf'),
         downloadPdf: document.getElementById('download-pdf'),
         exportPptx: document.getElementById('export-pptx'),
@@ -58,10 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
         createStyle: document.getElementById('create-style'),
         createPages: document.getElementById('create-pages'),
         createReference: document.getElementById('create-reference'),
+        confirmModal: document.getElementById('action-confirm-modal'),
+        confirmTitle: document.getElementById('confirm-title'),
+        confirmMessage: document.getElementById('confirm-message'),
+        confirmSubmit: document.getElementById('confirm-submit'),
+        confirmCancel: document.getElementById('confirm-cancel'),
+        confirmClose: document.getElementById('confirm-close'),
     };
 
     elements.openPreview.disabled = true;
     elements.restartProject.disabled = true;
+    elements.deleteProject?.setAttribute('aria-disabled', 'true');
+    elements.deleteProject?.setAttribute('disabled', 'true');
     elements.exportPdf.disabled = true;
     elements.exportPptx.disabled = true;
     elements.downloadPdf.disabled = true;
@@ -69,6 +78,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const showLoader = (visible = true) => {
         elements.loader.classList.toggle('hidden', !visible);
+    };
+
+    const openConfirmModal = ({ title, message, onConfirm }) => {
+        if (!elements.confirmModal || !elements.confirmSubmit) {
+            return;
+        }
+        elements.confirmTitle.textContent = title;
+        elements.confirmMessage.textContent = message;
+        elements.confirmModal.classList.remove('hidden');
+        elements.confirmSubmit.onclick = async () => {
+            try {
+                await onConfirm();
+                closeConfirmModal();
+            } catch (error) {
+                console.error(error);
+            }
+        };
+    };
+
+    const closeConfirmModal = () => {
+        if (!elements.confirmModal) return;
+        elements.confirmModal.classList.add('hidden');
+        elements.confirmSubmit.onclick = null;
     };
 
     let actionMenuVisible = false;
@@ -167,6 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         elements.projectsPlaceholder.classList.add('hidden');
         state.filtered.forEach((project) => {
+            const progressPercentage = project.slide_stats?.percentage || 0;
+            const completed = project.status === 'completed';
             const wrapper = document.createElement('button');
             wrapper.type = 'button';
             wrapper.className = 'project-item';
@@ -179,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>${project.page_num} 页</span>
                 </div>
                 <div class="project-item__progress">
-                    <div class="project-item__progress-bar" style="width:${project.slide_stats?.percentage || 0}%;"></div>
+                    <div class="project-item__progress-bar${completed ? ' project-item__progress-bar--completed' : ''}" style="width:${progressPercentage}%;"></div>
                 </div>
                 <div class="project-item__time">${formatDate(project.created_at)}</div>
             `;
@@ -328,7 +362,18 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.downloadPptx.setAttribute('aria-disabled', pptxReady ? 'false' : 'true');
         elements.downloadPptx.title = pptxReady ? '' : 'PPTX 尚未生成完成';
 
-        setActionMenuEnabled(projectReady || pdfReady || pptxReady);
+        setActionMenuEnabled(Boolean(state.selectedProjectId));
+        const isGenerating = project?.status === 'generating';
+        const dangerDisabled = !state.selectedProjectId || isGenerating;
+        if (elements.deleteProject) {
+            elements.deleteProject.disabled = dangerDisabled;
+            elements.deleteProject.setAttribute('aria-disabled', dangerDisabled ? 'true' : 'false');
+        }
+        if (elements.restartProject) {
+            const restartDisabled = !state.selectedProjectId || project?.status === 'generating';
+            elements.restartProject.disabled = restartDisabled;
+            elements.restartProject.setAttribute('aria-disabled', restartDisabled ? 'true' : 'false');
+        }
     };
 
     const renderSlides = (slides) => {
@@ -360,7 +405,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         state.selectedProjectId = projectId;
         state.selectedProjectName = null;
-        elements.restartProject.disabled = false;
+        const isGenerating = state.projectDetail?.status === 'generating';
+        elements.restartProject.disabled = Boolean(isGenerating);
+        elements.restartProject.setAttribute('aria-disabled', isGenerating ? 'true' : 'false');
+        if (elements.deleteProject) {
+            elements.deleteProject.disabled = Boolean(isGenerating);
+            elements.deleteProject.setAttribute('aria-disabled', isGenerating ? 'true' : 'false');
+        }
         setActionMenuEnabled(true);
         Array.from(elements.projectList.children).forEach((node) => {
             node.classList.toggle('active', node.dataset.projectId === projectId);
@@ -395,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.projectPages.textContent = project.page_num || '-';
             elements.projectStatus.textContent = STATUS_MAP[project.status]?.text || project.status || '-';
             elements.projectCreated.textContent = formatDate(project.created_at);
+            elements.projectProgress.classList.toggle('progress-fill--completed', project.status === 'completed');
             elements.projectProgress.style.width = `${stats?.percentage || 0}%`;
             renderProgressStats(stats);
             attachStatusChip(elements.projectStatusChip, project.status);
@@ -554,31 +606,91 @@ document.addEventListener('DOMContentLoaded', () => {
         setActionMenuVisibility(false);
     });
 
-    elements.restartProject.addEventListener('click', async () => {
+    elements.restartProject.addEventListener('click', () => {
         if (!state.selectedProjectId || elements.restartProject.disabled) {
             return;
         }
-        elements.restartProject.disabled = true;
-        showLoader(true);
-        showMessage('正在重新生成项目...', 'info');
-        try {
-            const res = await apiFetch(`/api/projects/${state.selectedProjectId}/restart`, {
-                method: 'POST',
-            });
-            if (!res.ok) throw new Error(`重新生成项目失败 (${res.status})`);
-            showMessage('项目重新生成任务已启动', 'success');
-            await fetchProjects();
-            await Promise.all([
-                fetchProjectDetail(state.selectedProjectId),
-                fetchProjectSlides(state.selectedProjectId),
-            ]);
-            ensurePolling();
-        } catch (error) {
-            console.error(error);
-            showMessage(error.message || '重新生成项目失败', 'error');
-        } finally {
-            elements.restartProject.disabled = false;
-            showLoader(false);
+        openConfirmModal({
+            title: '重新生成项目',
+            message: '此操作将重新生成项目的所有内容，确定继续吗？',
+            onConfirm: async () => {
+                elements.restartProject.disabled = true;
+                elements.restartProject.setAttribute('aria-disabled', 'true');
+                showLoader(true);
+                showMessage('正在重新生成项目...', 'info');
+                try {
+                    const res = await apiFetch(`/api/projects/${state.selectedProjectId}/restart`, {
+                        method: 'POST',
+                    });
+                    if (!res.ok) throw new Error(`重新生成项目失败 (${res.status})`);
+                    showMessage('项目重新生成任务已启动', 'success');
+                    await fetchProjects();
+                    if (state.selectedProjectId) {
+                        await Promise.all([
+                            fetchProjectDetail(state.selectedProjectId),
+                            fetchProjectSlides(state.selectedProjectId),
+                        ]);
+                        ensurePolling();
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showMessage(error.message || '重新生成项目失败', 'error');
+                } finally {
+                    elements.restartProject.disabled = false;
+                    elements.restartProject.setAttribute('aria-disabled', 'false');
+                    showLoader(false);
+                }
+            },
+        });
+    });
+
+    elements.deleteProject?.addEventListener('click', () => {
+        if (!state.selectedProjectId || elements.deleteProject.disabled) {
+            return;
+        }
+        openConfirmModal({
+            title: '删除项目',
+            message: '删除后无法恢复项目数据，请确认是否继续。',
+            onConfirm: async () => {
+                elements.deleteProject.disabled = true;
+                elements.deleteProject.setAttribute('aria-disabled', 'true');
+                showLoader(true);
+                showMessage('正在删除项目...', 'info');
+                try {
+                    const res = await apiFetch(`/api/projects/${state.selectedProjectId}`, {
+                        method: 'DELETE',
+                    });
+                    if (!res.ok) {
+                        throw new Error(`删除项目失败 (${res.status})`);
+                    }
+                    showMessage('项目已删除', 'success');
+                    state.selectedProjectId = null;
+                    state.selectedProjectName = null;
+                    state.projectDetail = null;
+                    clearInterval(state.pollTimer ?? undefined);
+                    state.pollTimer = null;
+                    elements.projectPanel.classList.add('hidden');
+                    elements.outlinePanel.classList.add('hidden');
+                    elements.slidesPanel.classList.add('hidden');
+                    elements.welcomePanel.classList.remove('hidden');
+                    await fetchProjects();
+                } catch (error) {
+                    console.error(error);
+                    showMessage(error.message || '删除项目失败', 'error');
+                } finally {
+                    elements.deleteProject.disabled = false;
+                    elements.deleteProject.setAttribute('aria-disabled', 'false');
+                    showLoader(false);
+                }
+            },
+        });
+    });
+
+    elements.confirmCancel?.addEventListener('click', closeConfirmModal);
+    elements.confirmClose?.addEventListener('click', closeConfirmModal);
+    elements.confirmModal?.addEventListener('click', (event) => {
+        if (event.target === elements.confirmModal) {
+            closeConfirmModal();
         }
     });
     elements.toggleOutline.addEventListener('click', () => {

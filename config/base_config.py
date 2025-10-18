@@ -42,6 +42,13 @@ SEARXNG_URL = str(os.getenv("SEARXNG_URL"))
 TAVILY_KEY = str(os.getenv("TAVILY_KEY"))
 TAVILY_MAX_NUM = int(os.getenv("TAVILY_MAX_NUM", 20))
 
+# === 并发配置 ===
+IMAGE_DOWNLOAD_MAX_WORKERS = int(os.getenv("IMAGE_DOWNLOAD_MAX_WORKERS", 15))
+HTML_GENERATION_MAX_WORKERS = int(os.getenv("HTML_GENERATION_MAX_WORKERS", 8))
+HTML2OFFICE_MAX_CONCURRENT_TASKS = int(
+    os.getenv("HTML2OFFICE_MAX_CONCURRENT_TASKS", 4)
+)
+
 
 # === 配置类 ===
 class LLMConfig:

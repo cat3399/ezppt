@@ -9,7 +9,11 @@ import traceback
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.base_config import OUTLINE_LLM_CONFIG, PPT_LLM_CONFIG
+from config.base_config import (
+    OUTLINE_LLM_CONFIG,
+    PPT_LLM_CONFIG,
+    HTML_GENERATION_MAX_WORKERS,
+)
 from config.logging_config import logger
 from src.agents.step_01_create_outline import create_outline
 from src.agents.step_02_create_html import create_html
@@ -173,7 +177,7 @@ def create_project_execute(outline_config: Outline):
         html_save_dir=html_save_dir,
     )
     chapters_map = outline_config_tmp.outline_json["chapters"]
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=HTML_GENERATION_MAX_WORKERS) as pool:
         # 每个 Future 对应一个章节的生成任务
         futures = {
             pool.submit(

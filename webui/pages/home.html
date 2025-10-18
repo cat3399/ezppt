@@ -44,13 +44,15 @@
                     <button id="open-preview" class="primary-button" type="button">打开预览</button>
                     <button id="refresh-detail" class="ghost-button" type="button">刷新状态</button>
                     <div class="action-menu">
-                        <button id="project-actions-toggle" class="ghost-button action-menu__trigger" type="button" aria-haspopup="true" aria-expanded="false">更多操作</button>
+                        <button id="project-actions-toggle" class="ghost-button action-menu__trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="更多操作" title="更多操作">⋮</button>
                         <div id="project-actions-menu" class="action-menu__dropdown hidden" role="menu">
-                            <button id="restart-project" class="action-menu__item" type="button" role="menuitem">重新生成项目</button>
                             <button id="export-pdf" class="action-menu__item" type="button" role="menuitem">导出为 PDF</button>
                             <button id="download-pdf" class="action-menu__item" type="button" role="menuitem" disabled>下载 PDF</button>
                             <button id="export-pptx" class="action-menu__item" type="button" role="menuitem">导出为 PPTX</button>
                             <button id="download-pptx" class="action-menu__item" type="button" role="menuitem" disabled>下载 PPTX</button>
+                            <div class="action-menu__divider" role="separator"></div>
+                            <button id="restart-project" class="action-menu__item action-menu__item--danger" type="button" role="menuitem">重新生成项目</button>
+                            <button id="delete-project" class="action-menu__item action-menu__item--danger" type="button" role="menuitem">删除项目</button>
                         </div>
                     </div>
                 </div>
@@ -160,6 +162,20 @@
                     <button id="create-submit" class="primary-button" type="submit">创建</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="action-confirm-modal" class="modal hidden">
+        <div class="modal-content modal-content--small">
+            <div class="modal-header">
+                <h3 id="confirm-title"></h3>
+                <button id="confirm-close" class="text-button" type="button">关闭</button>
+            </div>
+            <div class="confirm-message" id="confirm-message"></div>
+            <div class="modal-actions">
+                <button id="confirm-cancel" class="ghost-button" type="button">取消</button>
+                <button id="confirm-submit" class="danger-button" type="button">确认</button>
+            </div>
         </div>
     </div>
 

@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from collections import Counter
 from typing import Dict, List, Optional
+
+from sqlalchemy.engine import Engine
 from sqlmodel import Session, and_, delete, select, update
 
 project_root = Path(__file__).parent.parent.parent
@@ -13,11 +15,11 @@ from src.models.outline_slide_model import OutlineSlide
 from config.logging_config import logger
 
 
-def db_add_outline(outline_config: Outline) -> bool:
+def db_add_outline(outline_config: Outline, *, engine: Optional[Engine] = None) -> bool:
     """
     根据 create_outline 生成的 JSON，一次性创建 Outline 和所有的 OutlineSlide 记录
     """
-    engine = get_engine()
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             sess.add(outline_config)
@@ -31,8 +33,8 @@ def db_add_outline(outline_config: Outline) -> bool:
         return False
 
 
-def db_del_outline(project_id: str) -> bool:
-    engine = get_engine()
+def db_del_outline(project_id: str, *, engine: Optional[Engine] = None) -> bool:
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             stmt = select(Outline).where(Outline.project_id == project_id)
@@ -50,9 +52,11 @@ def db_del_outline(project_id: str) -> bool:
         return False
 
 
-def db_get_outline(project_id: str) -> Optional[Outline]:
+def db_get_outline(
+    project_id: str, *, engine: Optional[Engine] = None
+) -> Optional[Outline]:
     """获取一个项目的大纲"""
-    engine = get_engine()
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             stmt = select(Outline).where(Outline.project_id == project_id)
@@ -63,14 +67,14 @@ def db_get_outline(project_id: str) -> Optional[Outline]:
         return None
 
 
-def db_add_outline_slides(project_id: str) -> bool:
-    engine = get_engine()
+def db_add_outline_slides(project_id: str, *, engine: Optional[Engine] = None) -> bool:
+    engine = engine or get_engine()
     success_count = 0
     fail_count = 0
 
     try:
         with Session(engine) as sess:
-            outline_config = db_get_outline(project_id=project_id)
+            outline_config = db_get_outline(project_id=project_id, engine=engine)
             if not outline_config:
                 return False
             outline_json = outline_config.outline_json
@@ -79,7 +83,9 @@ def db_add_outline_slides(project_id: str) -> bool:
             if chapters:
                 for chapter in chapters:
                     chapter_id = int(chapter.get("chapter_id", ""))
-                    chapter_title = chapter.get("chapter_title") or chapter.get("chapter_topic", "")
+                    chapter_title = chapter.get("chapter_title") or chapter.get(
+                        "chapter_topic", ""
+                    )
                     slides = chapter.get("slides", [])
 
                     if chapter_id and slides:
@@ -135,8 +141,10 @@ def db_add_outline_slides(project_id: str) -> bool:
         return False
 
 
-def db_del_outline_slide(project_id: str, slide_id: str) -> bool:
-    engine = get_engine()
+def db_del_outline_slide(
+    project_id: str, slide_id: str, *, engine: Optional[Engine] = None
+) -> bool:
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             stmt = select(OutlineSlide).where(
@@ -155,9 +163,10 @@ def db_del_outline_slide(project_id: str, slide_id: str) -> bool:
         logger.error(f"删除项目 {project_id} 的幻灯片 {slide_id} 时出错: {exc}")
         return False
 
-def db_del_outline_slides(project_id: str) -> bool:
+
+def db_del_outline_slides(project_id: str, *, engine: Optional[Engine] = None) -> bool:
     """删除项目的所有幻灯片"""
-    engine = get_engine()
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             stmt = delete(OutlineSlide).where(OutlineSlide.project_id == project_id)
@@ -169,14 +178,21 @@ def db_del_outline_slides(project_id: str) -> bool:
         logger.error(f"删除项目 {project_id} 的所有幻灯片时出错: {exc}")
         return False
 
-def db_list_outline_slides(project_id: str) -> List[OutlineSlide]:
-    engine = get_engine()
+
+def db_list_outline_slides(
+    project_id: str, *, engine: Optional[Engine] = None
+) -> List[OutlineSlide]:
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             stmt = (
                 select(OutlineSlide)
                 .where(OutlineSlide.project_id == project_id)
-                .order_by(OutlineSlide.chapter_id, OutlineSlide.slide_order, OutlineSlide.slide_id)
+                .order_by(
+                    OutlineSlide.chapter_id,
+                    OutlineSlide.slide_order,
+                    OutlineSlide.slide_id,
+                )
             )
             results = sess.exec(stmt).all()
             return list(results)
@@ -185,8 +201,10 @@ def db_list_outline_slides(project_id: str) -> List[OutlineSlide]:
         return []
 
 
-def db_get_outline_slide(project_id: str, slide_id: str) -> Optional[OutlineSlide]:
-    engine = get_engine()
+def db_get_outline_slide(
+    project_id: str, slide_id: str, *, engine: Optional[Engine] = None
+) -> Optional[OutlineSlide]:
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             stmt = select(OutlineSlide).where(
@@ -204,8 +222,10 @@ def db_get_outline_slide(project_id: str, slide_id: str) -> Optional[OutlineSlid
         return None
 
 
-def db_get_slide_status(project_id: str) -> Dict[str, int]:
-    slides = db_list_outline_slides(project_id=project_id)
+def db_get_slide_status(
+    project_id: str, *, engine: Optional[Engine] = None
+) -> Dict[str, int]:
+    slides = db_list_outline_slides(project_id=project_id, engine=engine)
     counter = Counter(slide.status for slide in slides)
     total = len(slides)
     return {
@@ -223,9 +243,10 @@ def db_update_outline_slide(
     *,
     new_status: str = "",
     html_content: str = "",
+    engine: Optional[Engine] = None,
 ) -> bool:
     """更新某个幻灯片的字段"""
-    engine = get_engine()
+    engine = engine or get_engine()
     try:
         with Session(engine) as sess:
             # 构建更新字典
