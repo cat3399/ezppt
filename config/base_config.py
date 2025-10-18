@@ -101,8 +101,8 @@ CONFIG_ITEMS = [
 
     {"key": "SEARXNG_URL", "label": "Searxng 地址", "type": "text", "group": "搜索", "description": "公共服务器 https://searx.space/ "},
 
-    {"key": "TAVILY_KEY", "label": "Tavily Key", "type": "text", "group": "搜索"},
-    {"key": "TAVILY_MAX_NUM", "label": "Tavily 最大检索数", "type": "number", "group": "搜索"},
+    # {"key": "TAVILY_KEY", "label": "Tavily Key", "type": "text", "group": "搜索"},
+    # {"key": "TAVILY_MAX_NUM", "label": "Tavily 最大检索数", "type": "number", "group": "搜索"},
 
     {"key": "IMAGE_DOWNLOAD_MAX_WORKERS", "label": "图片下载并发数", "type": "number", "group": "杂项"},
     {
