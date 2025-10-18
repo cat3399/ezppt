@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedProjectName: null,
         pollTimer: null,
         projectDetail: null,
+        outlineLoaded: false,
+        outlineLoading: false,
     };
 
     const elements = {
@@ -60,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         createStyle: document.getElementById('create-style'),
         createPages: document.getElementById('create-pages'),
         createReference: document.getElementById('create-reference'),
+        createEnableImg: document.getElementById('create-enable-img'),
         confirmModal: document.getElementById('action-confirm-modal'),
         confirmTitle: document.getElementById('confirm-title'),
         confirmMessage: document.getElementById('confirm-message'),
@@ -351,9 +354,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const pdfReady = pdfStatus === 'completed';
         const pptxReady = pptxStatus === 'completed';
 
-        elements.exportPdf.disabled = !projectReady || pdfGenerating;
+        elements.exportPdf.disabled = !projectReady || pdfGenerating || pptxGenerating;
         elements.exportPdf.textContent = pdfGenerating ? '导出中...' : '导出为 PDF';
-        elements.exportPptx.disabled = !projectReady || pptxGenerating;
+        elements.exportPptx.disabled = !projectReady || pptxGenerating || pdfGenerating;
         elements.exportPptx.textContent = pptxGenerating ? '导出中...' : '导出为 PPTX';
 
         elements.downloadPdf.disabled = !pdfReady;
@@ -406,6 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         state.selectedProjectId = projectId;
         state.selectedProjectName = null;
+        state.outlineLoaded = false;
+        state.outlineLoading = false;
         const isGenerating = state.projectDetail?.status === 'generating';
         elements.restartProject.disabled = Boolean(isGenerating);
         elements.restartProject.setAttribute('aria-disabled', isGenerating ? 'true' : 'false');
@@ -454,6 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.openPreview.disabled = !(stats && stats.completed > 0);
             updateExportButtons(project);
             setActionMenuEnabled(true);
+            if (data.outline_ready && !state.outlineLoaded && !state.outlineLoading) {
+                fetchProjectOutline(projectId);
+            }
             return project;
         } catch (error) {
             console.error(error);
@@ -466,18 +474,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchProjectOutline = async (projectId) => {
         try {
+            state.outlineLoading = true;
             const res = await apiFetch(`/api/projects/${projectId}/outline`);
             if (res.status === 404) {
                 renderOutline(null);
+                state.outlineLoaded = false;
+                state.outlineLoading = false;
                 return;
             }
             if (!res.ok) throw new Error(`获取大纲失败 (${res.status})`);
             const data = await res.json();
             renderOutline(data);
+            state.outlineLoaded = true;
         } catch (error) {
             console.error(error);
             renderOutline(null);
             showMessage('大纲加载失败', 'error');
+            state.outlineLoaded = false;
+        } finally {
+            state.outlineLoading = false;
         }
     };
 
@@ -516,6 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const button = type === 'pdf' ? elements.exportPdf : elements.exportPptx;
+        const otherButton = type === 'pdf' ? elements.exportPptx : elements.exportPdf;
         if (!button || button.disabled) {
             return;
         }
@@ -524,8 +540,12 @@ document.addEventListener('DOMContentLoaded', () => {
             pptx: 'PPTX',
         };
         const defaultLabel = type === 'pdf' ? '导出为 PDF' : '导出为 PPTX';
+        const otherOriginalDisabled = otherButton ? otherButton.disabled : undefined;
         button.disabled = true;
         button.textContent = '导出中...';
+        if (otherButton) {
+            otherButton.disabled = true;
+        }
         showMessage(`正在导出 ${labelMap[type] || type.toUpperCase()}...`, 'info');
         try {
             const res = await apiFetch(`/api/projects/${state.selectedProjectId}/export/${type}`);
@@ -544,6 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!detail) {
                 button.disabled = false;
                 button.textContent = defaultLabel;
+                if (otherButton && otherOriginalDisabled !== undefined) {
+                    otherButton.disabled = otherOriginalDisabled;
+                }
             }
         }
     };
@@ -750,12 +773,6 @@ document.addEventListener('DOMContentLoaded', () => {
         closeCreateModal();
     });
 
-    elements.createModal.addEventListener('click', (event) => {
-        if (event.target === elements.createModal) {
-            closeCreateModal();
-        }
-    });
-
     elements.createForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (elements.createSubmit.disabled) {
@@ -771,6 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pageNum = 10;
         }
         const reference = elements.createReference.value.trim();
+        const enableImgSearch = elements.createEnableImg.checked;
 
         if (!topic) {
             showMessage('请输入项目主题', 'error');
@@ -798,6 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     audience,
                     style,
                     page_num: pageNum,
+                    enable_img_search: enableImgSearch,
                     reference_content: reference,
                 }),
             });

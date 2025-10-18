@@ -731,6 +731,26 @@ tbody tr:hover {
     resize: vertical;
 }
 
+.modal-form label.modal-checkbox {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    justify-content: flex-start;
+    align-self: flex-start;
+}
+
+.modal-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.modal-checkbox span {
+    margin: 0;
+}
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
