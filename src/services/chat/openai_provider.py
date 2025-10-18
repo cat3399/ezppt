@@ -6,9 +6,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.base_config import LLMConfig, OUTLINE_LLM_CONFIG
+from config.base_config import LLMConfig
+import config.base_config as base_config
 
-def chat_openai(images_base64: list[str] = [], prompt: str = "", llm_config: LLMConfig = OUTLINE_LLM_CONFIG) -> str:
+def chat_openai(images_base64: list[str] = [], prompt: str = "", llm_config: LLMConfig = base_config.OUTLINE_LLM_CONFIG) -> str:
     """
     调用OpenAI对话API，支持传入多个图片
     

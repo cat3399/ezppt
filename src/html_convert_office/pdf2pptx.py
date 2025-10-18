@@ -7,13 +7,13 @@ project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config.logging_config import logger
-from config.base_config import APRYSE_LICENSE_KEY
+import config.base_config as base_config
 
 def convert_pdf_to_pptx(pdf_path, pptx_path):
     """使用 Apryse SDK 将 PDF 转换为 PPTX"""
     logger.info(f"📄 正在将 PDF 转换为 PowerPoint 文件...")
     try:
-        PDFNetPython.PDFNet.Initialize(APRYSE_LICENSE_KEY)
+        PDFNetPython.PDFNet.Initialize(base_config.APRYSE_LICENSE_KEY)
         PDFNetPython.Convert.ToPowerPoint(pdf_path, pptx_path)
         logger.info(f"✅ PowerPoint 文件已保存至 {pptx_path}")
         return True

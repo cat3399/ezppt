@@ -8,8 +8,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-# 导入项目配置文件中的 SEARXNG 服务地址和日志记录器
-from config.base_config import SEARXNG_URL
+import config.base_config as base_config
 from config.logging_config import logger
 
 # 定义最大重试次数，用于网络请求失败时的重试机制
@@ -64,7 +63,7 @@ def search_searxng(query, language="zh-cn", time_page=[0, 0, 0], images_search=F
             logger.info(f"正在搜索: '{query}' (语言:{language}, 时间页:{time_page})")
             
             # 发送 GET 请求到 SearXNG API
-            response = requests.get(SEARXNG_URL, params=params, timeout=40)
+            response = requests.get(base_config.SEARXNG_URL, params=params, timeout=40)
             
             # 检查 HTTP 响应状态码，如果失败则抛出异常
             response.raise_for_status()

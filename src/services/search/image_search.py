@@ -16,7 +16,7 @@ sys.path.insert(0, str(project_root))
 from services.search.searxng_provider import search_searxng
 from src.utils.help_utils import download_image
 from config.logging_config import logger
-from config.base_config import PIC_NUM_LIMIT, IMAGE_DOWNLOAD_MAX_WORKERS
+import config.base_config as base_config
 
 MAX_RETRIES = 3
 IMG_PATH = "data/images"
@@ -121,7 +121,7 @@ def process_img_file(img_path, img_info_temp):
 
 def image_search(
     query,
-    pic_num_limit=PIC_NUM_LIMIT,
+    pic_num_limit=base_config.PIC_NUM_LIMIT,
     time_page=[0, 0, 0],
     img_base_path: str = str(project_root / "data" / "images"),
 ) -> dict:
@@ -170,7 +170,7 @@ def image_search(
 
     # 多线程下载图片
     logger.info("开始下载")
-    with ThreadPoolExecutor(max_workers=IMAGE_DOWNLOAD_MAX_WORKERS) as pool:
+    with ThreadPoolExecutor(max_workers=base_config.IMAGE_DOWNLOAD_MAX_WORKERS) as pool:
         futures = [
             pool.submit(download_image, value.img_url, key, value.thumbnail_url)
             for key, value in img_info_dict_temp.items()
