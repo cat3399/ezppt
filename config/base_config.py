@@ -16,8 +16,8 @@ if env_path.exists():
     load_dotenv(dotenv_path=env_path)
     logger.info(f"✅成功从 {env_path} 加载环境变量")
 else:
-    logger.error(f"未找到 {env_path} ")
-    assert False, "请创建 .env 文件并设置必要的环境变量"
+    logger.warning(f"未找到 {env_path} ")
+    # assert False, "请创建 .env 文件并设置必要的环境变量"
 
 _config_lock = threading.RLock()
 _runtime_overrides: Dict[str, Any] = {}

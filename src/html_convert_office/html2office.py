@@ -31,7 +31,7 @@ def html2office(
         project_name = project.project_name
         project_base_path = project_root / "data" / "projects" / project_name
         temp_pdf_path = project_root / "data" / "temp" / project_name
-        temp_pdf_path.mkdir(exist_ok=True)
+        temp_pdf_path.mkdir(parents=True, exist_ok=True)
 
         merged_pdf_path = project_base_path / str(project_name + ".pdf")
         output_pptx_path = project_base_path / str(project_name + ".pptx")
