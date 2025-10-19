@@ -5,13 +5,9 @@ build/
 dist/
 wheels/
 *.egg-info
-*.png
 .vscode/
-*.jpg
 # Virtual environments
 .venv
-.
-#ide specific
 
 # project specific
 .env
@@ -21,3 +17,4 @@ data/
 node_modules
 temp
 tests
+*Lib*
