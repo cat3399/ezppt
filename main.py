@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -9,9 +8,19 @@ from src.api.projects import router
 import uvicorn
 from config.logging_config import logger
 from src.repository.db_utils import init_db
+import shutil
+
 BASE_DIR = Path(__file__).resolve().parent
 PROJECTS_DIR = BASE_DIR / "data" / "projects"
 WEBUI_DIR = BASE_DIR / "webui"
+ENV_FILE = BASE_DIR / ".env"
+ENV_TEMPLATE_FILE = BASE_DIR / ".env.template"
+# 检查并创建 .env 文件
+if not ENV_FILE.exists() and ENV_TEMPLATE_FILE.exists():
+    shutil.copy(ENV_TEMPLATE_FILE, ENV_FILE)
+    logger.warning(".env 文件不存在,已从 .env.template 创建,请手动修改!!!")
+elif not ENV_TEMPLATE_FILE.exists():
+    logger.error(".env.template 文件不存在，无法自动创建 .env")
 
 app = FastAPI()
 
