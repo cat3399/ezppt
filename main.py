@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from src.html_convert_office.html2pdf import ensure_playwright_installed
 from src.api.projects import router
 import uvicorn
 from config.logging_config import logger
@@ -67,6 +68,7 @@ async def preview_page():
 
 if __name__ == "__main__":
     init_db()
+    ensure_playwright_installed()
     logger.info("Starting server in http://127.0.0.1:8000")
     # 将 app 对象改为导入字符串
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, reload_dirs=["src"])

@@ -12,6 +12,36 @@ sys.path.insert(0, str(project_root))
 from config.logging_config import logger
 
 
+# 全局变量，防止重复检查安装
+_PLAYWRIGHT_INSTALLED = False
+
+
+def ensure_playwright_installed():
+    """确保 Playwright 已安装，并安装 chromium 浏览器（只执行一次）"""
+    global _PLAYWRIGHT_INSTALLED
+    if _PLAYWRIGHT_INSTALLED:
+        return
+    
+    import subprocess
+
+    try:
+        # 只安装并仅使用 chromium，减少体积占用
+        logger.info("🔍 检查并安装 Playwright 的 Chromium 浏览器...")
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        logger.info("✅ Chromium 浏览器安装完成")
+        _PLAYWRIGHT_INSTALLED = True
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            f"💥 安装 Playwright 浏览器失败，请手动执行 playwright install: {e}"
+        )
+        raise
+
+
 async def create_pdf_from_html(
     browser: Browser, html_file_path: str, output_pdf_path: str, timeout: int = 60
 ) -> str:
@@ -40,7 +70,6 @@ async def create_pdf_from_html(
         logger.info(f"✅ PDF 生成成功: {output_pdf_path}")
         return output_pdf_path
     except Exception as e:
-        # 让异常向上抛出，由 asyncio.wait_for 和 gather 统一处理
         logger.error(f"❌ 在处理 {html_file_path} 时发生错误: {type(e).__name__} - {e}")
         raise e
     finally:
@@ -51,16 +80,11 @@ async def create_pdf_from_html(
 async def generate_multiple_pdfs(
     files_to_process: list[tuple[str, str]],
     timeout: int = 60,
-    max_concurrent_tasks: int = 5,  # 新增控制并发数量参数
+    max_concurrent_tasks: int = 5,
 ) -> bool:
     """
     启动一个浏览器会话，并发地处理多个 HTML 到 PDF 的转换任务。
     每个任务都有一个总的超时限制，并限制最大并发数。
-
-    Args:
-        files_to_process: 文件处理列表。
-        task_timeout_seconds: 每个单独的PDF生成任务的超时时间（秒）。
-        max_concurrent_tasks: 最大并发任务数量。
     """
     async with async_playwright() as p:
         browser = await p.chromium.launch()
@@ -71,8 +95,10 @@ async def generate_multiple_pdfs(
         semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
         async def limited_create_pdf(html_path, pdf_path):
-            async with semaphore:  # 控制并发数量
-                return await create_pdf_from_html(browser, html_path, pdf_path, timeout=timeout)
+            async with semaphore:
+                return await create_pdf_from_html(
+                    browser, html_path, pdf_path, timeout=timeout
+                )
 
         tasks = []
         for html_path, pdf_path in files_to_process:
@@ -108,6 +134,7 @@ async def generate_multiple_pdfs(
         logger.info("🖐️ 浏览器已关闭。")
         return len(successful_files) != 0
 
+
 def merge_pdfs(pdf_paths, output_path):
     """将多个 PDF 文件按传入顺序合并为一个"""
     try:
@@ -119,29 +146,3 @@ def merge_pdfs(pdf_paths, output_path):
                 logger.info(f"✅ 合并PDF成功 ({output_path})")
     except Exception as e:
         logger.error(f"💥 合并PDF失败, 错误: {e}")
-
-
-# if __name__ == "__main__":
-#     base_path = project_root / "data" / "projects" / "aas_20251013"
-#     html_files_path = base_path / "html_files"
-#     tmp_pdf_file_path = project_root / "data" / "temp" / "aas_20251013"
-#     pdf_file_path = base_path / "aas_20251013.pdf"
-
-#     html_list = [
-#         f.name for f in html_files_path.iterdir() if f.is_file() and f.suffix == ".html"
-#     ]
-#     pdf_list = [f.rsplit(".", maxsplit=1)[0] + ".pdf" for f in html_list]
-#     logger.info(f"HTML文件列表: {html_list}")
-#     logger.info(f"PDF文件列表: {pdf_list}")
-
-#     pdf_jobs = [
-#         (str(html_files_path / html_file), str(tmp_pdf_file_path / pdf_file))
-#         for html_file, pdf_file in zip(html_list, pdf_list)
-#     ]
-
-#     asyncio.run(generate_multiple_pdfs(pdf_jobs))
-#     merge_pdfs(
-#         [str(tmp_pdf_file_path / pdf_file) for pdf_file in pdf_list], str(pdf_file_path)
-#     )
-#     # 强制删除临时文件目录
-#     shutil.rmtree(tmp_pdf_file_path, ignore_errors=True)
