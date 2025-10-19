@@ -3,11 +3,12 @@ import sys
 from pathlib import Path
 
 # 将项目根目录添加到 Python 路径
-project_root = Path(__file__).parent.parent.parent
+project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config.base_config import LLMConfig
 import config.base_config as base_config
+from config.logging_config import logger
 
 def chat_openai(images_base64: list[str] = [], prompt: str = "", llm_config: LLMConfig = base_config.OUTLINE_LLM_CONFIG) -> str:
     """
@@ -88,3 +89,6 @@ def chat_openai(images_base64: list[str] = [], prompt: str = "", llm_config: LLM
         return result['choices'][0]['message']['content']
     else:
         raise Exception(f"API调用失败: {response.status_code} - {response.json()}")
+
+if __name__ == "__main__":
+    logger.info(chat_openai(prompt="hi"))
