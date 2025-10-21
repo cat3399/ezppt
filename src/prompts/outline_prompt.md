@@ -6,6 +6,8 @@
 
 *   `topic`:  演示文稿的核心主题。{topic}
 *   `page_num`: 演示文稿的预计总页数（这是一个建议值，方便你规划内容节奏与深度）。{page_num}
+*   `audience`: 演示文稿的预期受众。{audience}
+*   `style`: 演示文稿的风格。{style}
 *   `reference_content`: 用于构造大纲的参考内容 <<{reference_content}>> 
 
 # 核心策划原则

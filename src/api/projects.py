@@ -141,7 +141,7 @@ def list_project_files(project: str = Query(..., min_length=1)):
 def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
     project_id = str(uuid.uuid4())
     now_time = datetime.now()
-    project_name = req.topic.replace(" ", "_") + "_" + time_name()
+    project_name = req.topic.replace(" ", "_")[:30] + "_" + time_name()
     topic = req.topic
     audience = req.audience
     style = req.style
@@ -157,7 +157,7 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         style=style,
         page_num=page_num,
         enable_img_search=enable_img_search,
-        status="pending",
+        status=Status.pending,
         create_time=now_time,
     )
 
@@ -171,7 +171,6 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         reference_content=reference_content
     )
 
-    # 先保存要返回的值
     pid = project.project_id
     pname = project.project_name
 
@@ -182,11 +181,10 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
     if ok:
         logger.info(f"项目 {pid} 写入数据库成功")
         background_tasks.add_task(create_project_execute, outline_config)
-        pstatus = "start"
         return {
             "project_id": pid,
             "project_name": pname,
-            "status": pstatus,
+            "status": Status.pending,
             "enable_img_search": enable_img_search,
         }
     raise HTTPException(status_code=500, detail="创建项目失败")

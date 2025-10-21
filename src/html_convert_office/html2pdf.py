@@ -21,14 +21,17 @@ def ensure_playwright_installed():
     global _PLAYWRIGHT_INSTALLED
     if _PLAYWRIGHT_INSTALLED:
         return
-    
+
     import subprocess
 
     try:
         # 只安装并仅使用 chromium，减少体积占用
-        logger.info("🔍 检查并安装 Playwright 的 Chromium 浏览器...")
+        logger.info("🔍 检查并安装 Playwright 的 Chromium 浏览器中...")
+        logger.info(
+            f"请稍等，这可能需要一些时间...在此期间终端没有输出是正常的,如果想要查看进度,请中断此终端,另外运行 {sys.executable} -m playwright install chromium-headless-shell --with-deps "
+        )
         subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
+            [sys.executable, "-m", "playwright", "install", "chromium-headless-shell", "--with-deps"],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

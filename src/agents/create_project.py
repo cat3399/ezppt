@@ -1,10 +1,8 @@
-from copy import deepcopy
-import json
-import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import traceback
+from copy import deepcopy
 
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -64,12 +62,15 @@ def _create_html_with_image(
         d = visual_suggestions["image_description"]
         img_result = get_pic(query=q, description=d, img_base_path=str(img_base_path))
         images_temp = {
-            Path("..", *(Path(k).parts[-2:])).as_posix(): v for k, v in img_result.items()
+            Path("..", *(Path(k).parts[-2:])).as_posix(): v
+            for k, v in img_result.items()
         }
         outline_config.images[target_id] = images_temp
         # print(outline_config.images)
     html_content = create_html(
-        outline_config=outline_config, target_id=target_id, llm_config=base_config.PPT_LLM_CONFIG
+        outline_config=outline_config,
+        target_id=target_id,
+        llm_config=base_config.PPT_LLM_CONFIG,
     )
     return html_content
 
@@ -97,7 +98,9 @@ def _generate_chapter_slide_html(outline_config: Outline, slide_id: str) -> str:
         )
     else:
         html_content = create_html(
-            outline_config=outline_config, target_id=slide_id, llm_config=base_config.PPT_LLM_CONFIG
+            outline_config=outline_config,
+            target_id=slide_id,
+            llm_config=base_config.PPT_LLM_CONFIG,
         )
     return html_content
 
@@ -142,7 +145,6 @@ def _generate_chapter_slides_html(
 
 
 def create_project_execute(outline_config: Outline):
-    # 环境准备
     _, html_save_dir, img_save_dir, outline_file = _get_project_dir(outline_config)
     html_save_dir.mkdir(parents=True, exist_ok=True)
     img_save_dir.mkdir(parents=True, exist_ok=True)
@@ -159,22 +161,30 @@ def create_project_execute(outline_config: Outline):
         outline_config.enable_img_search = False
 
     # 生成并保存大纲到数据库
-    outline_config = create_outline(
-        outline_config=outline_config, llm_config=base_config.OUTLINE_LLM_CONFIG
-    )
+    try:
+        outline_config = create_outline(
+            outline_config=outline_config, llm_config=base_config.OUTLINE_LLM_CONFIG
+        )
+    except Exception as e:
+        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
+        logger.error(traceback.format_exc())
+        raise e
 
     ok = outline_repo.db_add_outline(outline_config=outline_config)
     if not ok:
+        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
         logger.error(f"无法将项目{project_id}大纲保存到数据库! 建议重建项目")
         raise Exception(f"无法将项目{project_id}大纲保存到数据库! 建议重建项目")
     ok = outline_repo.db_add_outline_slides(project_id=project_id)
     if not ok:
+        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
         logger.error(f"无法将项目{project_id}幻灯片保存到数据库! 建议重建项目")
         raise Exception(f"无法将项目{project_id}幻灯片保存到数据库! 建议重建项目")
     project_repo.db_update_project(project_id=project_id, new_status=Status.generating)
     logger.info(f"项目 {project_id} 的状态已更新为 '{Status.generating}'")
     outline_config_tmp = outline_repo.db_get_outline(project_id=project_id)
     if not outline_config_tmp:
+        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
         logger.error(f"无法从数据库中获取项目 {project_id} 的大纲")
         raise Exception(f"无法从数据库中获取项目 {project_id} 的大纲")
     outline_config_tmp = _generate_chapter_slides_html(
@@ -188,7 +198,9 @@ def create_project_execute(outline_config: Outline):
         futures = {
             pool.submit(
                 _generate_chapter_slides_html,
-                outline_config=deepcopy(outline_config_tmp),  # 传入包含第一章上下文的副本
+                outline_config=deepcopy(
+                    outline_config_tmp
+                ),  # 传入包含第一章上下文的副本
                 chapter_order=int(chapter["chapter_id"]),
                 html_save_dir=html_save_dir,
             ): chapter["chapter_id"]
@@ -201,7 +213,7 @@ def create_project_execute(outline_config: Outline):
                 fut.result()  # 等待该章节全部生成完毕
                 logger.info(f"章节 {chapter_id} 已全部生成完毕。")
             except Exception as e:
-                logger.error(f"生成章节 {chapter_id} 时发生严重错误: {e}")
+                logger.error(f"生成章节 {chapter_id} 时发生错误: {e}")
     logger.info("所有幻灯片内容均已生成完毕。")
     project_repo.db_update_project(project_id=project_id, new_status=Status.completed)
     logger.info(f"项目 {project_id} 的状态已更新为 '{Status.completed}'")
@@ -211,7 +223,7 @@ def restart_project_execute(project_id):
     outline_config = outline_repo.db_get_outline(project_id)
     if outline_config is None:
         logger.error(f"未找到项目 {project_id} 的大纲")
-        return
+        raise ValueError(f"未找到项目 {project_id} 的大纲")
     clean_outline_config = Outline(
         project_id=project_id,
         topic=outline_config.topic,
@@ -242,12 +254,14 @@ def restart_slide_execute(project_id, slide_id):
         outline_config = outline_repo.db_get_outline(project_id)
         if outline_config is None:
             logger.error(f"未找到项目 {project_id} 的大纲")
-            return
+            raise ValueError(f"未找到项目 {project_id} 的大纲")
         _, html_save_dir, _, _ = _get_project_dir(outline_config)
         chapter_id = str(slide_id.split(".")[0])
         slide_order = int(slide_id.split(".")[1])
         reference_slides_list = [f"{chapter_id}.{i}" for i in range(1, slide_order)]
-        logger.info(f"重新生成幻灯片 {slide_id}，参考幻灯片id列表: {reference_slides_list}")
+        logger.info(
+            f"重新生成幻灯片 {slide_id}，参考幻灯片id列表: {reference_slides_list}"
+        )
         for reference_slide_id in reference_slides_list:
             reference_slide = outline_repo.db_get_outline_slide(
                 project_id, reference_slide_id
@@ -261,8 +275,12 @@ def restart_slide_execute(project_id, slide_id):
 
         slide_html_content = _generate_chapter_slide_html(outline_config, slide_id)
         if slide_html_content is None:
-            logger.error(f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容失败")
-            return
+            logger.error(
+                f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容失败"
+            )
+            raise ValueError(
+                f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容失败"
+            )
         (html_save_dir / f"{slide_id}.html").write_text(
             slide_html_content, encoding="utf-8"
         )
@@ -272,10 +290,16 @@ def restart_slide_execute(project_id, slide_id):
             html_content=slide_html_content,
             new_status=Status.completed,
         )
-        logger.info(f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容成功")
+        logger.info(
+            f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容成功"
+        )
     except Exception as e:
-        logger.error(f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容失败: {e}")
-        outline_repo.db_update_outline_slide(project_id=project_id, slide_id=slide_id, new_status=Status.failed)
+        logger.error(
+            f"重新生成生成项目 {project_id} 的幻灯片 {slide_id} 的 HTML 内容失败: {e}"
+        )
+        outline_repo.db_update_outline_slide(
+            project_id=project_id, slide_id=slide_id, new_status=Status.failed
+        )
         logger.error(traceback.format_exc())
 
 

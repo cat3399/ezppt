@@ -143,8 +143,10 @@ def response2json(text: str) -> dict:
     返回:
         dict: 成功时返回解析后的 JSON 对象, 失败时返回空字典
     """
-    # 清理输入文本（这部分保留您原有的逻辑）
+    # 清理输入文本
     if text.rstrip(" ").startswith("<think>"):
+        text = text.split("</think>", maxsplit=1)[-1]
+    if "</think>" in text: # 兼容cerebras和sambanova,应该不会引发其他问题吧
         text = text.split("</think>", maxsplit=1)[-1]
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
 
@@ -154,17 +156,15 @@ def response2json(text: str) -> dict:
     if match_obj:
         string_to_parse = match_obj.group(1)
 
-        # --- 新增的关键代码 ---
         # 使用正则表达式移除在 } 或 ] 前的多余逗号
         string_to_parse = re.sub(r",\s*([}\]])", r"\1", string_to_parse)
-        # --------------------
         try:
             parsed_json_content = json.loads(string_to_parse)
             return parsed_json_content
         except json.JSONDecodeError as e:
             logger.error(f"JSON 解析失败: {e}")
             # 为了调试，可以打印出清理后但仍然解析失败的字符串
-            # print("清理后无法解析的字符串:", string_to_parse)
+            logger.info("清理后无法解析的字符串:", string_to_parse)
             return {}
     else:
         logger.warning("未找到匹配的 JSON 格式内容")
@@ -272,6 +272,6 @@ def extract_html(html_content: str) -> str:
 
 
 def time_name() -> str:
-    ts_str = datetime.now().strftime("%Y%m%d")  # 例如 20250907_202903
-    # ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")  # 例如 20250907_202903
+    # ts_str = datetime.now().strftime("%Y%m%d")  # 例如 20250907
+    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")  # 例如 20250907_202903
     return ts_str

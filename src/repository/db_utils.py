@@ -38,7 +38,6 @@ def init_db(engine: Optional[Engine] = None) -> str:
 
     if need_init:
         logger.info("数据库初始化完成")
-        print("数据库初始化成功")
     return str(DB_PATH)
 
 

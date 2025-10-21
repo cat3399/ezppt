@@ -12,6 +12,7 @@ sys.path.insert(0, str(project_root))
 from src.repository.db_utils import get_engine
 from src.models.outline_model import Outline
 from src.models.outline_slide_model import OutlineSlide
+from src.models.project_model import Status
 from config.logging_config import logger
 
 
@@ -116,7 +117,7 @@ def db_add_outline_slides(project_id: str, *, engine: Optional[Engine] = None) -
                                         slide_order=slide_order,
                                         slide_topic=slide_topic,
                                         visual_suggestion=visual_suggestion,
-                                        status="pending",
+                                        status=Status.pending,
                                     )
 
                                     sess.add(outline_slide)

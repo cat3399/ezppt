@@ -35,7 +35,7 @@ def chat_gemini(images_base64: list[str] = [], prompt: str = "", llm_config:LLMC
     }
 
     headers = {"Content-Type": "application/json"}
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    url = f"{OUTLINE_LLM_CONFIG.api_url}/v1beta/models/{model}:generateContent?key={api_key}"
     try:
         response = requests.post(url, headers=headers, json=request_body, timeout=600)
     except Exception as e:
