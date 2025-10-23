@@ -29,16 +29,16 @@ def create_outline(outline_config: Outline, llm_config=OUTLINE_LLM_CONFIG) -> Ou
         audience=audience,
         style=style,
     )
-    outline_llm_rsp = text_chat(prompt=outline_prompt, llm_config=llm_config)
-    # print("大纲模型返回的原始内容：\n", outline_llm_rsp)
-    outline_json = response2json(outline_llm_rsp)
+    # outline_llm_rsp = text_chat(prompt=outline_prompt, llm_config=llm_config)
+    # # print("大纲模型返回的原始内容：\n", outline_llm_rsp)
+    # outline_json = response2json(outline_llm_rsp)
 
     # with open(project_root.joinpath("response.json"),'w',encoding="utf-8") as fp:
     #     fp.write(json.dumps(outline_json,ensure_ascii=False,indent=4))
 
-    # with open(project_root.joinpath("response.json"), "r", encoding="utf-8") as fp:
-    #     outline_json = fp.read()
-    #     outline_json = json.loads(outline_json)
+    with open(project_root.joinpath("response.json"), "r", encoding="utf-8") as fp:
+        outline_json = fp.read()
+        outline_json = json.loads(outline_json)
 
     outline_config.outline_json = outline_json
     return outline_config
