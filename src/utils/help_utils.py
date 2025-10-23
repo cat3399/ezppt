@@ -67,6 +67,7 @@ def img2base64(filename_result: str) -> str:
         print(f"无法将图片文件 {filename_result} 转换为base64编码: {e}")
         return ""
 
+
 def download_image(url: str, filename: str, url_bak: str = ""):
     """
     下载图片并返回文件名（如果文件已存在则不下载）
@@ -146,7 +147,7 @@ def response2json(text: str) -> dict:
     # 清理输入文本
     if text.rstrip(" ").startswith("<think>"):
         text = text.split("</think>", maxsplit=1)[-1]
-    if "</think>" in text: # 兼容cerebras和sambanova,应该不会引发其他问题吧
+    if "</think>" in text:  # 兼容cerebras和sambanova,应该不会引发其他问题吧
         text = text.split("</think>", maxsplit=1)[-1]
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
 

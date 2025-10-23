@@ -45,5 +45,6 @@ def get_engine() -> Engine:
     """获取全局数据库引擎实例"""
     return ENGINE
 
+
 if __name__ == "__main__":
     init_db()

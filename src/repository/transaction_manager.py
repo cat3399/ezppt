@@ -12,7 +12,9 @@ from src.repository.db_utils import get_engine
 
 
 @contextmanager
-def transaction_scope(engine: Optional[Engine] = None) -> Generator[Session, None, None]:
+def transaction_scope(
+    engine: Optional[Engine] = None,
+) -> Generator[Session, None, None]:
     """Provide a transactional scope around a series of operations."""
     target_engine = engine or get_engine()
     session = Session(target_engine)
@@ -26,7 +28,9 @@ def transaction_scope(engine: Optional[Engine] = None) -> Generator[Session, Non
         session.close()
 
 
-def delete_project_with_related(project_id: str, *, engine: Optional[Engine] = None) -> bool:
+def delete_project_with_related(
+    project_id: str, *, engine: Optional[Engine] = None
+) -> bool:
     target_engine = engine or get_engine()
     try:
         with transaction_scope(target_engine) as session:
@@ -40,9 +44,7 @@ def delete_project_with_related(project_id: str, *, engine: Optional[Engine] = N
             session.exec(
                 delete(OutlineSlide).where(OutlineSlide.project_id == project_id)
             )
-            session.exec(
-                delete(Outline).where(Outline.project_id == project_id)
-            )
+            session.exec(delete(Outline).where(Outline.project_id == project_id))
             session.delete(project)
 
         logger.info("项目 %s 及关联数据已删除", project_id)

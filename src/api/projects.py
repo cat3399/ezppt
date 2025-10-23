@@ -59,7 +59,7 @@ def _is_safe_name(name: str) -> bool:
 def _html_sort_key(filename: str):
     stem = filename[:-5] if filename.lower().endswith(".html") else filename
     parts = stem.split(".")
-    max_order = 10 ** 9
+    max_order = 10**9
     try:
         major = int(parts[0])
     except (ValueError, IndexError):
@@ -168,16 +168,14 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         style=style,
         page_num=page_num,
         enable_img_search=enable_img_search,
-        reference_content=reference_content
+        reference_content=reference_content,
     )
 
     pid = project.project_id
     pname = project.project_name
 
     logger.info(f"接收到的数据: {req}")
-    ok = project_repo.db_add_project(
-        project=project
-    )
+    ok = project_repo.db_add_project(project=project)
     if ok:
         logger.info(f"项目 {pid} 写入数据库成功")
         background_tasks.add_task(create_project_execute, outline_config)
@@ -189,6 +187,7 @@ def add_project(req: ProjectIn, background_tasks: BackgroundTasks):
         }
     raise HTTPException(status_code=500, detail="创建项目失败")
 
+
 # 删除某个项目
 @router.delete("/api/projects/{project_id}")
 def delete_project(project_id: str):
@@ -196,6 +195,7 @@ def delete_project(project_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="项目不存在或删除失败")
     return {"message": "项目删除成功"}
+
 
 @router.post("/api/save")
 def save_project_file(req: SaveFileRequest):
@@ -365,7 +365,9 @@ def get_project_slides(project_id: str):
     slides = outline_repo.db_list_outline_slides(project_id)
     items = []
     for slide in slides:
-        chapter_title = slide.chapter_title or (f"第 {slide.chapter_id} 章" if slide.chapter_id else "")
+        chapter_title = slide.chapter_title or (
+            f"第 {slide.chapter_id} 章" if slide.chapter_id else ""
+        )
         items.append(
             {
                 "slide_id": slide.slide_id,
@@ -378,11 +380,13 @@ def get_project_slides(project_id: str):
             }
         )
 
-    return jsonable_encoder({
-        "project_id": project_id,
-        "project_name": project.project_name,
-        "slides": items,
-    })
+    return jsonable_encoder(
+        {
+            "project_id": project_id,
+            "project_name": project.project_name,
+            "slides": items,
+        }
+    )
 
 
 @router.get("/api/projects/{project_id}/slides/{slide_id}")
@@ -393,6 +397,7 @@ def get_project_slide_detail(project_id: str, slide_id: str):
 
     data = model_to_dict(slide)
     return jsonable_encoder(data)
+
 
 @router.post("/api/projects/{project_id}/restart")
 def restart_project(project_id: str, background_tasks: BackgroundTasks):
@@ -430,6 +435,7 @@ def restart_slide(project_id: str, slide_id: str, background_tasks: BackgroundTa
         "status": Status.generating,
     }
 
+
 @router.get("/api/projects/{project_id}/export/pdf")
 def export_project_to_pdf(project_id: str, background_tasks: BackgroundTasks):
     project = project_repo.db_get_project(project_id)
@@ -447,8 +453,11 @@ def export_project_to_pdf(project_id: str, background_tasks: BackgroundTasks):
         return {"project_id": project_id, "status": Status.generating}
 
     logger.info(f"开始导出项目 {project_id} 到 PDF")
-    background_tasks.add_task(html2office, project_id=project_id, to_pdf = True, to_pptx = False)
+    background_tasks.add_task(
+        html2office, project_id=project_id, to_pdf=True, to_pptx=False
+    )
     return {"project_id": project_id, "status": Status.generating}
+
 
 @router.get("/api/projects/{project_id}/export/pptx")
 def export_project_to_pptx(project_id: str, background_tasks: BackgroundTasks):
@@ -467,5 +476,7 @@ def export_project_to_pptx(project_id: str, background_tasks: BackgroundTasks):
         return {"project_id": project_id, "status": Status.generating}
 
     logger.info(f"开始导出项目 {project_id} 到 PPTX")
-    background_tasks.add_task(html2office, project_id=project_id, to_pdf = True, to_pptx = True)
+    background_tasks.add_task(
+        html2office, project_id=project_id, to_pdf=True, to_pptx=True
+    )
     return {"project_id": project_id, "status": Status.generating}

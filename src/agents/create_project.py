@@ -151,72 +151,82 @@ def create_project_execute(outline_config: Outline):
     logger.info(f"HTML 文件保存位置：{html_save_dir}")
     logger.info(f"大纲保存位置：{outline_file}")
 
-    # 提前提取后续需要的数据
     project_id = outline_config.project_id
-    global_visual_suggestion = outline_config.outline_json.get(
-        "global_visual_suggestion", {}
-    )
-    outline_config.global_visual_suggestion = global_visual_suggestion
-    if not hasattr(outline_config, "enable_img_search"):
-        outline_config.enable_img_search = False
 
-    # 生成并保存大纲到数据库
     try:
+        # 提取配置数据
+        global_visual_suggestion = outline_config.outline_json.get(
+            "global_visual_suggestion", {}
+        )
+        outline_config.global_visual_suggestion = global_visual_suggestion
+        if not hasattr(outline_config, "enable_img_search"):
+            outline_config.enable_img_search = False
+
+        # 生成并保存大纲
         outline_config = create_outline(
             outline_config=outline_config, llm_config=base_config.OUTLINE_LLM_CONFIG
         )
+
+        # 保存到数据库
+        if not outline_repo.db_add_outline(outline_config=outline_config):
+            raise Exception(f"无法将项目{project_id}大纲保存到数据库! 建议重建项目")
+
+        if not outline_repo.db_add_outline_slides(project_id=project_id):
+            raise Exception(f"无法将项目{project_id}幻灯片保存到数据库! 建议重建项目")
+
+        # 更新状态为生成中
+        project_repo.db_update_project(
+            project_id=project_id, new_status=Status.generating
+        )
+        logger.info(f"项目 {project_id} 的状态已更新为 '{Status.generating}'")
+
+        # 获取大纲配置
+        outline_config_tmp = outline_repo.db_get_outline(project_id=project_id)
+        if not outline_config_tmp:
+            raise Exception(f"无法从数据库中获取项目 {project_id} 的大纲")
+
+        # 生成第一章
+        outline_config_tmp = _generate_chapter_slides_html(
+            outline_config=outline_config_tmp,
+            chapter_order=1,
+            html_save_dir=html_save_dir,
+        )
+
+        # 并发生成其他章节
+        chapters_map = outline_config_tmp.outline_json["chapters"]
+        with ThreadPoolExecutor(max_workers=base_config.PPT_API_LIMIT) as pool:
+            futures = {
+                pool.submit(
+                    _generate_chapter_slides_html,
+                    outline_config=deepcopy(outline_config_tmp),
+                    chapter_order=int(chapter["chapter_id"]),
+                    html_save_dir=html_save_dir,
+                ): chapter["chapter_id"]
+                for chapter in chapters_map
+                if int(chapter["chapter_id"]) > 1
+            }
+
+            for fut in futures:
+                chapter_id = futures[fut]
+                try:
+                    fut.result()
+                    logger.info(f"章节 {chapter_id} 已全部生成完毕。")
+                except Exception as e:
+                    logger.error(f"生成章节 {chapter_id} 时发生错误: {e}")
+                    raise
+
+        # 完成
+        logger.info("所有幻灯片内容均已生成完毕。")
+        project_repo.db_update_project(
+            project_id=project_id, new_status=Status.completed
+        )
+        logger.info(f"项目 {project_id} 的状态已更新为 '{Status.completed}'")
+
     except Exception as e:
         project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
+        logger.error(f"项目 {project_id} 生成失败: {e}")
         logger.error(traceback.format_exc())
-        raise e
-
-    ok = outline_repo.db_add_outline(outline_config=outline_config)
-    if not ok:
-        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
-        logger.error(f"无法将项目{project_id}大纲保存到数据库! 建议重建项目")
-        raise Exception(f"无法将项目{project_id}大纲保存到数据库! 建议重建项目")
-    ok = outline_repo.db_add_outline_slides(project_id=project_id)
-    if not ok:
-        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
-        logger.error(f"无法将项目{project_id}幻灯片保存到数据库! 建议重建项目")
-        raise Exception(f"无法将项目{project_id}幻灯片保存到数据库! 建议重建项目")
-    project_repo.db_update_project(project_id=project_id, new_status=Status.generating)
-    logger.info(f"项目 {project_id} 的状态已更新为 '{Status.generating}'")
-    outline_config_tmp = outline_repo.db_get_outline(project_id=project_id)
-    if not outline_config_tmp:
-        project_repo.db_update_project(project_id=project_id, new_status=Status.failed)
-        logger.error(f"无法从数据库中获取项目 {project_id} 的大纲")
-        raise Exception(f"无法从数据库中获取项目 {project_id} 的大纲")
-    outline_config_tmp = _generate_chapter_slides_html(
-        outline_config=outline_config_tmp,
-        chapter_order=1,
-        html_save_dir=html_save_dir,
-    )
-    chapters_map = outline_config_tmp.outline_json["chapters"]
-    with ThreadPoolExecutor(max_workers=base_config.PPT_API_LIMIT) as pool:
-        # 每个 Future 对应一个章节的生成任务
-        futures = {
-            pool.submit(
-                _generate_chapter_slides_html,
-                outline_config=deepcopy(
-                    outline_config_tmp
-                ),  # 传入包含第一章上下文的副本
-                chapter_order=int(chapter["chapter_id"]),
-                html_save_dir=html_save_dir,
-            ): chapter["chapter_id"]
-            for chapter in chapters_map
-            if int(chapter["chapter_id"]) > 1
-        }
-        for fut in futures:
-            chapter_id = futures[fut]
-            try:
-                fut.result()  # 等待该章节全部生成完毕
-                logger.info(f"章节 {chapter_id} 已全部生成完毕。")
-            except Exception as e:
-                logger.error(f"生成章节 {chapter_id} 时发生错误: {e}")
-    logger.info("所有幻灯片内容均已生成完毕。")
-    project_repo.db_update_project(project_id=project_id, new_status=Status.completed)
-    logger.info(f"项目 {project_id} 的状态已更新为 '{Status.completed}'")
+        raise
 
 
 def restart_project_execute(project_id):
@@ -233,10 +243,14 @@ def restart_project_execute(project_id):
         enable_img_search=outline_config.enable_img_search,
         reference_content=outline_config.reference_content,
     )
-    _, html_save_dir, _, _ = _get_project_dir(outline_config)
+    run_dir, html_save_dir, _, _ = _get_project_dir(outline_config)
     # 删除html_save_dir中的所有html文件
     for file in html_save_dir.iterdir():
         if file.is_file() and file.suffix == ".html":
+            file.unlink()
+    # 删除run_dir下的 pdf 和 pptx 文件
+    for file in run_dir.iterdir():
+        if file.is_file() and file.suffix in [".pdf", ".pptx"]:
             file.unlink()
     project_repo.db_update_project(
         project_id=project_id,
@@ -246,6 +260,11 @@ def restart_project_execute(project_id):
     )
     outline_repo.db_del_outline(project_id)
     outline_repo.db_del_outline_slides(project_id)
+    project_repo.db_update_project(
+        project_id=project_id,
+        new_pdf_status=Status.pending,
+        new_pptx_status=Status.pending,
+    )
     create_project_execute(clean_outline_config)
 
 

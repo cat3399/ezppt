@@ -31,7 +31,14 @@ def ensure_playwright_installed():
             f"请稍等，这可能需要一些时间...在此期间终端没有输出是正常的,如果想要查看进度,请中断此终端,另外运行 {sys.executable} -m playwright install chromium-headless-shell --with-deps "
         )
         subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "chromium-headless-shell", "--with-deps"],
+            [
+                sys.executable,
+                "-m",
+                "playwright",
+                "install",
+                "chromium-headless-shell",
+                "--with-deps",
+            ],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

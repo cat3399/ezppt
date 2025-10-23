@@ -11,7 +11,7 @@ sys.path.insert(0, str(project_root))
 
 from config.logging_config import logger
 
-env_path = project_root / '.env'
+env_path = project_root / ".env"
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
     logger.info(f"✅成功从 {env_path} 加载环境变量")
@@ -81,30 +81,110 @@ IMAGE_DOWNLOAD_MAX_WORKERS = 15
 
 # === 配置定义 ===
 CONFIG_ITEMS = [
-    {"key": "OUTLINE_API_TYPE", "label": "大纲 LLM API 类型", "type": "text", "group": "大纲模型", "description": "仅支持 openai 或 gemini"},
-    {"key": "OUTLINE_API_KEY", "label": "大纲 LLM API Key", "type": "text", "group": "大纲模型"},
-    {"key": "OUTLINE_API_URL", "label": "大纲 LLM API 地址", "type": "text", "group": "大纲模型"},
-    {"key": "OUTLINE_MODEL", "label": "大纲 LLM 模型名称", "type": "text", "group": "大纲模型"},
-
-    {"key": "PPT_API_TYPE", "label": "PPT LLM API 类型", "type": "text", "group": "PPT 模型", "description": "仅支持 openai 或 gemini"},
-    {"key": "PPT_API_KEY", "label": "PPT LLM API Key", "type": "text", "group": "PPT 模型"},
-    {"key": "PPT_API_URL", "label": "PPT LLM API 地址", "type": "text", "group": "PPT 模型"},
-    {"key": "PPT_MODEL", "label": "PPT LLM 模型名称", "type": "text", "group": "PPT 模型"},
-    {"key": "PPT_API_LIMIT", "label": "PPT LLM API 并发限制", "type": "number", "group": "PPT 模型"},
-
-
-    {"key": "PIC_API_TYPE", "label": "图片理解 LLM API 类型", "type": "text", "group": "图片模型", "description": "仅支持 openai 或 gemini"},
-    {"key": "PIC_API_KEY", "label": "图片理解 LLM API Key", "type": "text", "group": "图片模型"},
-    {"key": "PIC_API_URL", "label": "图片理解 LLM API 地址", "type": "text", "group": "图片模型"},
-    {"key": "PIC_MODEL", "label": "图片理解 LLM 模型名称", "type": "text", "group": "图片模型", "description": "必须支持图片理解!"},
-    {"key": "PIC_NUM_LIMIT", "label": "图片数量限制", "type": "number", "group": "图片模型", "description": "搜索时返回的图片数量限制"},
-
-    {"key": "SEARXNG_URL", "label": "Searxng 地址", "type": "text", "group": "搜索", "description": "公共服务器 https://searx.space/ "},
-
+    {
+        "key": "OUTLINE_API_TYPE",
+        "label": "大纲 LLM API 类型",
+        "type": "text",
+        "group": "大纲模型",
+        "description": "仅支持 openai 或 gemini",
+    },
+    {
+        "key": "OUTLINE_API_KEY",
+        "label": "大纲 LLM API Key",
+        "type": "text",
+        "group": "大纲模型",
+    },
+    {
+        "key": "OUTLINE_API_URL",
+        "label": "大纲 LLM API 地址",
+        "type": "text",
+        "group": "大纲模型",
+    },
+    {
+        "key": "OUTLINE_MODEL",
+        "label": "大纲 LLM 模型名称",
+        "type": "text",
+        "group": "大纲模型",
+    },
+    {
+        "key": "PPT_API_TYPE",
+        "label": "PPT LLM API 类型",
+        "type": "text",
+        "group": "PPT 模型",
+        "description": "仅支持 openai 或 gemini",
+    },
+    {
+        "key": "PPT_API_KEY",
+        "label": "PPT LLM API Key",
+        "type": "text",
+        "group": "PPT 模型",
+    },
+    {
+        "key": "PPT_API_URL",
+        "label": "PPT LLM API 地址",
+        "type": "text",
+        "group": "PPT 模型",
+    },
+    {
+        "key": "PPT_MODEL",
+        "label": "PPT LLM 模型名称",
+        "type": "text",
+        "group": "PPT 模型",
+    },
+    {
+        "key": "PPT_API_LIMIT",
+        "label": "PPT LLM API 并发限制",
+        "type": "number",
+        "group": "PPT 模型",
+    },
+    {
+        "key": "PIC_API_TYPE",
+        "label": "图片理解 LLM API 类型",
+        "type": "text",
+        "group": "图片模型",
+        "description": "仅支持 openai 或 gemini",
+    },
+    {
+        "key": "PIC_API_KEY",
+        "label": "图片理解 LLM API Key",
+        "type": "text",
+        "group": "图片模型",
+    },
+    {
+        "key": "PIC_API_URL",
+        "label": "图片理解 LLM API 地址",
+        "type": "text",
+        "group": "图片模型",
+    },
+    {
+        "key": "PIC_MODEL",
+        "label": "图片理解 LLM 模型名称",
+        "type": "text",
+        "group": "图片模型",
+        "description": "必须支持图片理解!",
+    },
+    {
+        "key": "PIC_NUM_LIMIT",
+        "label": "图片数量限制",
+        "type": "number",
+        "group": "图片模型",
+        "description": "搜索时返回的图片数量限制",
+    },
+    {
+        "key": "SEARXNG_URL",
+        "label": "Searxng 地址",
+        "type": "text",
+        "group": "搜索",
+        "description": "公共服务器 https://searx.space/ ",
+    },
     # {"key": "TAVILY_KEY", "label": "Tavily Key", "type": "text", "group": "搜索"},
     # {"key": "TAVILY_MAX_NUM", "label": "Tavily 最大检索数", "type": "number", "group": "搜索"},
-
-    {"key": "IMAGE_DOWNLOAD_MAX_WORKERS", "label": "图片下载并发数", "type": "number", "group": "杂项"},
+    {
+        "key": "IMAGE_DOWNLOAD_MAX_WORKERS",
+        "label": "图片下载并发数",
+        "type": "number",
+        "group": "杂项",
+    },
     {
         "key": "APRYSE_LICENSE_KEY",
         "label": "Apryse License Key",
@@ -124,9 +204,10 @@ class LLMConfig:
         self.api_key = api_key
         self.api_url = api_url
         self.api_type = api_type
-    
+
     def __repr__(self):
         return f"LLMConfig(name='{self.name}', api_key='{self.api_key[:10]}...', api_url='{self.api_url}', api_type='{self.api_type}')"
+
 
 OUTLINE_LLM_CONFIG = LLMConfig("", "", "", "")
 PPT_LLM_CONFIG = LLMConfig("", "", "", "")

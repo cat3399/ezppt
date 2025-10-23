@@ -46,7 +46,9 @@ def html2office(
             key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1])),
         )
 
-        pdf_file_names = [f.rsplit(".", maxsplit=1)[0] + ".pdf" for f in html_file_names]
+        pdf_file_names = [
+            f.rsplit(".", maxsplit=1)[0] + ".pdf" for f in html_file_names
+        ]
         logger.info(f"HTML文件列表: {html_file_names}")
         logger.info(f"PDF文件列表: {pdf_file_names}")
 
@@ -68,25 +70,37 @@ def html2office(
                 )
                 if ok:
                     merge_pdfs(
-                    [str(temp_pdf_path / pdf_file) for pdf_file in pdf_file_names],
-                    str(merged_pdf_path),
-                )
-                    project_repo.db_update_project(project_id, new_pdf_status=Status.completed)
+                        [str(temp_pdf_path / pdf_file) for pdf_file in pdf_file_names],
+                        str(merged_pdf_path),
+                    )
+                    project_repo.db_update_project(
+                        project_id, new_pdf_status=Status.completed
+                    )
                 else:
-                    project_repo.db_update_project(project_id, new_pdf_status=Status.failed)
+                    project_repo.db_update_project(
+                        project_id, new_pdf_status=Status.failed
+                    )
             else:
                 logger.info(f"PDF文件已存在: {merged_pdf_path}")
-                project_repo.db_update_project(project_id, new_pdf_status=Status.completed)
+                project_repo.db_update_project(
+                    project_id, new_pdf_status=Status.completed
+                )
             shutil.rmtree(temp_pdf_path, ignore_errors=True)
         if to_pptx:
             ok = convert_pdf_to_pptx(
                 pdf_path=str(merged_pdf_path), pptx_path=str(output_pptx_path)
             )
             if not ok:
-                project_repo.db_update_project(project_id, new_pptx_status=Status.failed)
+                project_repo.db_update_project(
+                    project_id, new_pptx_status=Status.failed
+                )
             else:
-                project_repo.db_update_project(project_id, new_pdf_status=Status.completed)
-                project_repo.db_update_project(project_id, new_pptx_status=Status.completed)
+                project_repo.db_update_project(
+                    project_id, new_pdf_status=Status.completed
+                )
+                project_repo.db_update_project(
+                    project_id, new_pptx_status=Status.completed
+                )
     except Exception as e:
         if to_pptx:
             project_repo.db_update_project(project_id, new_pptx_status=Status.failed)
@@ -97,7 +111,6 @@ def html2office(
         logger.error(traceback.format_exc())
     finally:
         shutil.rmtree(temp_pdf_path, ignore_errors=True)
-
 
 
 # if __name__ == "__main__":
