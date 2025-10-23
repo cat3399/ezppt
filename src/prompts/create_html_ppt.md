@@ -23,7 +23,7 @@
     *   **背景 `<body>`**: **必须**用于居中画布，样式为 `display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;`
 
 *   **阴影与层级模型 (Shadow & Layering)**
-    *   **内部元素扁平化**: 画布内的所有元素（如 Bento Grid 单元格）**绝对禁止使用阴影**。应使用**边框**或**不同的浅背景色**来区分。
+    *   **内部元素扁平化**: 画布内的所有元素（如 Bento Grid 单元格）**绝对禁止使用阴影**。应使用**边框**或**不同的背景色**来区分。
 
 *   **技术栈与格式 (Tech Stack & Format)**
     *   **格式**: 单个 HTML 文件，所有 CSS 和 JS 必须内联。
@@ -77,14 +77,15 @@
     *   仅在必要时用于点缀或增强语义，且必须通过 CDN 引入并使用 `<ion-icon>` 标签。
     *   CDN: `<script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>`
     *   **严格禁止**使用任何其他来源的图标。
-*   **字体大小 (备用规范)**: 严格遵循从 `style_reference_html` 提取的字体系统。如果参考文件不完整，则使用以下规范：
+*   **字体大小**: 尽量遵循从 `style_reference_html` 提取的字体系统。如果参考文件不完整，则使用以下规范：
     | 角色 (Role) | 建议字体大小 |
     | :--- | :--- |
-    | **主标题 (H1)** | **48px - 72px** |
-    | **卡片/区域标题 (H3)**| **30px** |
-    | **正文/描述 (Paragraph)**| **22px** |
-    | **辅助/注释 (Small)** | **19px** |
-    | **高亮文本** | **其所在的常规文本尺寸 + 2-4px**|
+    | **主标题 (H1)** | **32px - 64px** |
+    | **卡片/区域标题 (H3)**| **28-32px** |
+    | **正文/描述 (Paragraph)**| **20-28px** |
+    | **辅助/注释 (Small)** | **14-18px** |
+    | **高亮文本** | **其所在的常规文本尺寸 + 2-4px 并且设置额外的颜色**|
+    如果style_reference_html的字体规格不适用于当前内容，则可以灵活调整字体大小，避免内容超出画布
 
 ---
 
