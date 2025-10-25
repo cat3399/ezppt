@@ -110,8 +110,8 @@ def convert_pdf_to_pptx(pdf_path: str, pptx_path: str) -> bool:
     except Exception as e:
         logger.error(f"❌ 任务执行失败 ({pdf_path}), 错误: {e}")
         return False
-    finally:
-        PDFNet.Terminate()
+    # finally:
+    #     PDFNet.Terminate()
 
 
 if __name__ == "__main__":
