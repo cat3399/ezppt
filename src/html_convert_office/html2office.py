@@ -3,7 +3,10 @@ from pathlib import Path
 import asyncio
 import shutil
 import traceback
+import multiprocessing
 
+# --- 其他代码保持不变 ---
+# (项目根目录设置, imports等)
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -22,6 +25,7 @@ def html2office(
     max_concurrent_tasks: int | None = None,
     timeout: int = 60,
 ):
+    temp_pdf_path = None
     try:
         project = project_repo.db_get_project(project_id)
         if project is None:
@@ -80,38 +84,77 @@ def html2office(
                     project_repo.db_update_project(
                         project_id, new_pdf_status=Status.failed
                     )
+                    if to_pptx:
+                         project_repo.db_update_project(
+                            project_id, new_pptx_status=Status.failed
+                        )
+                    return
             else:
                 logger.info(f"PDF文件已存在: {merged_pdf_path}")
                 project_repo.db_update_project(
                     project_id, new_pdf_status=Status.completed
                 )
-            shutil.rmtree(temp_pdf_path, ignore_errors=True)
+        
+        # ==================== to_pptx 逻辑块修改 ====================
         if to_pptx:
-            ok = convert_pdf_to_pptx(
-                pdf_path=str(merged_pdf_path), pptx_path=str(output_pptx_path)
+            if not merged_pdf_path.exists():
+                logger.error(f"无法进行PPTX转换，因为依赖的PDF文件不存在: {merged_pdf_path}")
+                project_repo.db_update_project(project_id, new_pptx_status=Status.failed)
+                return
+
+            logger.info(f"准备在独立的子进程中执行PDF到PPTX的转换...")
+            
+            conversion_process = multiprocessing.Process(
+                target=convert_pdf_to_pptx, 
+                args=(str(merged_pdf_path), str(output_pptx_path)),
+                name=f"PPTX-Converter-{project_id[:8]}"
             )
-            if not ok:
+            conversion_process.start()
+            TIMEOUT_SECONDS = 300
+            conversion_process.join(timeout=TIMEOUT_SECONDS)
+
+            if conversion_process.is_alive():
+                logger.warning(f"子进程 {conversion_process.name} 超时({TIMEOUT_SECONDS}秒)，正在强制终止...")
+                conversion_process.terminate()
+                conversion_process.join(5)
+                if conversion_process.is_alive():
+                    conversion_process.kill()
+                logger.error(f"PPTX转换任务因超时而失败。")
                 project_repo.db_update_project(
                     project_id, new_pptx_status=Status.failed
                 )
             else:
-                project_repo.db_update_project(
-                    project_id, new_pdf_status=Status.completed
-                )
-                project_repo.db_update_project(
-                    project_id, new_pptx_status=Status.completed
-                )
+                if conversion_process.exitcode == 0:
+                    # 我们需要一种方式知道 convert_pdf_to_pptx 的返回值
+                    # 但跨进程返回值需要用 Queue 或 Pipe，会增加复杂性。
+                    # 更简单的方式是检查输出文件是否存在。
+                    if output_pptx_path.exists() and output_pptx_path.stat().st_size > 0:
+                        logger.info(f"PPTX转换任务成功完成。")
+                        project_repo.db_update_project(
+                            project_id, new_pptx_status=Status.completed
+                        )
+                    else:
+                        # 子进程退出了，但文件没生成，说明内部出错了
+                        logger.error(f"子进程正常退出，但未生成有效的PPTX文件。")
+                        project_repo.db_update_project(
+                            project_id, new_pptx_status=Status.failed
+                        )
+                else:
+                    # 子进程以非零退出码结束，表示有错误发生
+                    logger.error(f"子进程以错误码 {conversion_process.exitcode} 退出，PPTX转换任务失败。")
+                    project_repo.db_update_project(
+                        project_id, new_pptx_status=Status.failed
+                    )
+
     except Exception as e:
         if to_pptx:
             project_repo.db_update_project(project_id, new_pptx_status=Status.failed)
             project_repo.db_update_project(project_id, new_pdf_status=Status.failed)
         else:
             project_repo.db_update_project(project_id, new_pdf_status=Status.failed)
-        logger.error(f"转换失败: {e}")
+        logger.error(f"html2office 任务执行失败: {e}")
         logger.error(traceback.format_exc())
     finally:
-        shutil.rmtree(temp_pdf_path, ignore_errors=True)
+        if temp_pdf_path and temp_pdf_path.exists():
+             shutil.rmtree(temp_pdf_path, ignore_errors=True)
 
-
-# if __name__ == "__main__":
-#     html2office("44433ab3-c3e3-485a-abfb-a5c4b478e9ea")
