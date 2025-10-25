@@ -10,7 +10,8 @@ sys.path.insert(0, str(project_root))
 import config.base_config as base_config
 from config.logging_config import logger
 from src.agents.step_01_create_outline import create_outline
-from src.agents.step_02_create_html import create_html
+from src.agents.step_03_create_html import create_html
+from src.agents.step_02_plan_layout import plan_layout
 from src.agents.get_pic import get_pic
 from src.models.outline_model import Outline
 from src.repository import outline_repo, project_repo
@@ -139,6 +140,11 @@ def _generate_chapter_slides_html(
         except Exception as e:
             logger.error(traceback.format_exc())
             logger.error(f"在生成章节 {chapter_order} 的幻灯片 {slide_id} 时失败: {e}")
+            outline_repo.db_update_outline_slide(
+                project_id=outline_config.project_id,
+                slide_id=slide_id,
+                new_status=Status.failed,
+            )
             # 即使单页失败，也继续尝试生成本章的下一页
             continue
     return outline_config
@@ -162,10 +168,14 @@ def create_project_execute(outline_config: Outline):
         if not hasattr(outline_config, "enable_img_search"):
             outline_config.enable_img_search = False
 
-        # 生成并保存大纲
+        # 生成大纲
         outline_config = create_outline(
             outline_config=outline_config, llm_config=base_config.OUTLINE_LLM_CONFIG
         )
+
+        # 制定布局规划
+        outline_layout = plan_layout(outline_config=outline_config)
+        outline_config.outline_layout = outline_layout
 
         # 保存到数据库
         if not outline_repo.db_add_outline(outline_config=outline_config):

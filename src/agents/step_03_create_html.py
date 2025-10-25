@@ -46,10 +46,13 @@ def create_html(
 ) -> str:
     """根据大纲和目标ID生成HTML内容"""
     chapters = outline_config.outline_json.get("chapters", [])
+    # 布局提取
+    outline_layout = outline_config.outline_layout
+    slide_outline_layout = outline_layout.get(str(target_id), "无")
 
     # 初始化变量
     style_reference_html = ""
-    layout_reference_html = ""
+    continuity_reference_html = ""
 
     # 生成 style_reference_html (风格参考)
     if chapters:
@@ -58,12 +61,12 @@ def create_html(
             slides=first_chapter.get("slides", []),
         )
 
-    # 生成 layout_reference_html (布局参考)
+    # 生成 continuity_reference_html (布局参考)
     if chapters:
         target_chapter_id = target_id.split(".", maxsplit=1)[0]
         for chapter in chapters:
             if chapter.get("chapter_id") == target_chapter_id:
-                layout_reference_html = _format_slides_as_reference_html(
+                continuity_reference_html = _format_slides_as_reference_html(
                     slides=chapter.get("slides", []),
                 )
                 break
@@ -71,8 +74,8 @@ def create_html(
     if not style_reference_html:
         style_reference_html = "这是第一个界面,没有任何参考文件"
 
-    if not layout_reference_html:
-        layout_reference_html = "这是第一个界面,没有任何参考文件"
+    if not continuity_reference_html:
+        continuity_reference_html = "这是第一个界面,没有任何参考文件"
 
     # for reference_html,reference_html_content in reference_html_dict.items():
     #     print("有参考的编号",reference_html)
@@ -85,8 +88,9 @@ def create_html(
         html_prompt = create_html_ppt.format(
             outline=parse_outline(outline_config.outline_json),
             target_id=target_id,
+            slide_outline_layout=slide_outline_layout,
             style_reference_html=style_reference_html,
-            layout_reference_html=layout_reference_html,
+            continuity_reference_html=continuity_reference_html,
         )
     else:
         for k, value in images.items():
@@ -98,8 +102,9 @@ def create_html(
             outline=parse_outline(outline_config.outline_json),
             target_id=target_id,
             imgs_info=imgs_info,
+            slide_outline_layout=slide_outline_layout,
             style_reference_html=style_reference_html,
-            layout_reference_html=layout_reference_html,
+            continuity_reference_html=continuity_reference_html,
         )
     # html_prompt = create_html_ppt.format(outline=parse_outline(outline_config.outline_json), target_id=target_id)
     if target_id == "2.2":

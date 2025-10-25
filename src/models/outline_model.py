@@ -18,6 +18,7 @@ class Outline(SQLModel, table=True):
     global_visual_suggestion: dict = Field(default_factory=dict, sa_type=JSON)
     outline_json: dict = Field(default_factory=dict, sa_type=JSON)
     images: dict = Field(default_factory=dict, sa_type=JSON)
+    outline_layout: dict = Field(default_factory=dict, sa_type=JSON)
     # 参考资料
     reference_content: str = ""
     # 状态
