@@ -76,7 +76,7 @@ SEARXNG_URL = ""
 
 TAVILY_KEY = ""
 TAVILY_MAX_NUM = 20
-
+HTML2OFFICE_MAX_CONCURRENT_TASKS = 4
 IMAGE_DOWNLOAD_MAX_WORKERS = 15
 
 # === 配置定义 ===
@@ -175,7 +175,7 @@ CONFIG_ITEMS = [
         "label": "Searxng 地址",
         "type": "text",
         "group": "搜索",
-        "description": "公共服务器 https://searx.space/ ",
+        "description": "寻找免费公共服务器 https://searx.space/ ",
     },
     # {"key": "TAVILY_KEY", "label": "Tavily Key", "type": "text", "group": "搜索"},
     # {"key": "TAVILY_MAX_NUM", "label": "Tavily 最大检索数", "type": "number", "group": "搜索"},
@@ -184,6 +184,13 @@ CONFIG_ITEMS = [
         "label": "图片下载并发数",
         "type": "number",
         "group": "杂项",
+    },
+    {
+        "key": "HTML2OFFICE_MAX_CONCURRENT_TASKS",
+        "label": "HTML转PDF并发数(导出PDF或者PPTX会用到)",
+        "type": "number",
+        "group": "杂项",
+        "description": "比较吃内存，不要设置太大，2g以内建议不超过4",
     },
     {
         "key": "APRYSE_LICENSE_KEY",
@@ -224,6 +231,7 @@ NUMERIC_DEFAULTS = {
     "TAVILY_MAX_NUM": 20,
     "IMAGE_DOWNLOAD_MAX_WORKERS": 15,
     "PPT_API_LIMIT": 4,
+    "HTML2OFFICE_MAX_CONCURRENT_TASKS": 4,
 }
 STRING_DEFAULTS = {
     "SEARXNG_URL": "",

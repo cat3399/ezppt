@@ -57,7 +57,7 @@ def html2office(
             for html_file, pdf_file in zip(html_file_names, pdf_file_names)
         ]
 
-        effective_limit = max_concurrent_tasks or base_config.PPT_API_LIMIT
+        effective_limit = max_concurrent_tasks or base_config.HTML2OFFICE_MAX_CONCURRENT_TASKS
 
         if to_pdf or to_pptx:
             if not merged_pdf_path.exists():
