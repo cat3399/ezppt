@@ -12,6 +12,7 @@ from src.utils.help_utils import response2json, get_prompt
 from src.models.outline_model import Outline
 
 standard_outline_prompt = get_prompt("outline_prompt")
+standard_outline_prompt_with_image = get_prompt("outline_prompt_with_image")
 
 
 def create_outline(outline_config: Outline, llm_config=base_config.OUTLINE_LLM_CONFIG) -> Outline:
@@ -21,14 +22,21 @@ def create_outline(outline_config: Outline, llm_config=base_config.OUTLINE_LLM_C
     audience = outline_config.audience
     style = outline_config.style
     reference_content = outline_config.reference_content
+    enable_img_search = outline_config.enable_img_search
 
-    outline_prompt = standard_outline_prompt.format(
-        topic=topic,
-        page_num=page_num,
-        reference_content=reference_content,
-        audience=audience,
-        style=style,
-    )
+    if enable_img_search:
+        logger.info("启用图片搜索")
+        outline_base_prompt = standard_outline_prompt_with_image
+    else:
+        logger.info("禁用图片搜索")
+        outline_base_prompt = standard_outline_prompt
+    outline_prompt = outline_base_prompt.format(
+            topic=topic,
+            page_num=page_num,
+            reference_content=reference_content,
+            audience=audience,
+            style=style,
+        )
     outline_llm_rsp = text_chat(prompt=outline_prompt, llm_config=llm_config)
     # print("大纲模型返回的原始内容：\n", outline_llm_rsp)
     outline_json = response2json(outline_llm_rsp)
