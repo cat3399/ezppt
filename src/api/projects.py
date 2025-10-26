@@ -379,7 +379,10 @@ def get_project_slides(project_id: str):
                 "html_ready": bool(slide.html_content),
             }
         )
-
+    all_completed = all(slide["status"] == Status.completed for slide in items)
+    if all_completed and project.status != Status.completed:
+        project_repo.db_update_project(project_id, Status.completed)
+        project.status = Status.completed
     return jsonable_encoder(
         {
             "project_id": project_id,
