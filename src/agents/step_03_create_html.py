@@ -107,11 +107,6 @@ def create_html(
             continuity_reference_html=continuity_reference_html,
         )
     # html_prompt = create_html_ppt.format(outline=parse_outline(outline_config.outline_json), target_id=target_id)
-    if target_id == "2.2":
-        # print(html_prompt)
-        with open("tmp.prompt", "w", encoding="utf-8") as fp:
-            fp.write(html_prompt)
-
     html_llm_rsp = text_chat(prompt=html_prompt, llm_config=llm_config)
     html_content = extract_html(html_llm_rsp)
     return html_content
