@@ -43,9 +43,10 @@
    *   **最佳适用**：4-6个要点，可自然分组。
 
 3. 网格/卡片布局 (Grid/Card Layout)
-   *   **布局说明**：要点置于独立卡片中，以网格排列（如2x2或者3个元素排成一行）。
+   *   **布局说明**：要点剧中置于独立卡片中，。
    *   **核心特点**：模块化、视觉分割、现代感。
    *   **最佳适用**：并列同等重要信息。
+
 
 #### 关系布局 (Relational Layouts for Progressive or Connected Content)
 4. 水平流程/步骤布局 (Horizontal Flow/Steps Layout)
