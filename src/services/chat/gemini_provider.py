@@ -6,10 +6,10 @@ import traceback
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.base_config import LLMConfig, OUTLINE_LLM_CONFIG
+import config.base_config as base_config
 from config.logging_config import logger
 
-def chat_gemini(images_base64: list[str] = [], prompt: str = "", llm_config:LLMConfig = OUTLINE_LLM_CONFIG) -> str:
+def chat_gemini(images_base64: list[str] = [], prompt: str = "", llm_config:base_config.LLMConfig = base_config.PIC_LLM_CONFIG) -> str:
     api_key = llm_config.api_key
     model = llm_config.name
     parts = []
@@ -35,18 +35,19 @@ def chat_gemini(images_base64: list[str] = [], prompt: str = "", llm_config:LLMC
     }
 
     headers = {"Content-Type": "application/json"}
-    url = f"{OUTLINE_LLM_CONFIG.api_url}/v1beta/models/{model}:generateContent?key={api_key}"
+    url = f"{llm_config.api_url}/v1beta/models/{model}:generateContent?key={api_key}"
     try:
         response = requests.post(url, headers=headers, json=request_body, timeout=600)
     except Exception as e:
         logger.error(f"请求失败: {e}")
         traceback.print_exc()
-    # print("返回到内容为",response.content)
-    # print("返回到内容为",response.json())
+    # print("返回的内容为",response.content)
+    # print("返回的内容为",response.json())
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 if __name__ == "__main__":
     # 测试代码
     test_prompt = "泥嚎鸭"
-    response = chat_gemini(prompt=test_prompt)
+    logger.info(base_config.PIC_LLM_CONFIG)
+    response = chat_gemini(prompt=test_prompt, llm_config=base_config.PIC_LLM_CONFIG)
     print(response)

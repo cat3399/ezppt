@@ -80,4 +80,4 @@ if __name__ == "__main__":
     # ensure_playwright_installed()
     logger.info("Starting server in http://127.0.0.1:8000")
     # 将 app 对象改为导入字符串
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, reload_dirs=["src"])
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

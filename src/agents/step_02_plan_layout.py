@@ -5,7 +5,6 @@ import json
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.base_config import OUTLINE_LLM_CONFIG
 from config.logging_config import logger
 from src.services.chat.chat import text_chat
 from src.utils.help_utils import response2json, get_prompt, parse_outline

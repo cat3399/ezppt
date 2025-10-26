@@ -58,16 +58,19 @@ def _create_html_with_image(
     project_name = project_repo.db_get_project(outline_config.project_id).project_name
     img_base_path = project_root / "data" / "projects" / project_name / "images"
     logger.info(visual_suggestions)
-    if visual_suggestions != {}:
-        q = visual_suggestions["search_keywords"]
-        d = visual_suggestions["image_description"]
-        img_result = get_pic(query=q, description=d, img_base_path=str(img_base_path))
-        images_temp = {
-            Path("..", *(Path(k).parts[-2:])).as_posix(): v
-            for k, v in img_result.items()
-        }
-        outline_config.images[target_id] = images_temp
-        # print(outline_config.images)
+    try:
+        if visual_suggestions != {}:
+            q = visual_suggestions["search_keywords"]
+            d = visual_suggestions["image_description"]
+            img_result = get_pic(query=q, description=d, img_base_path=str(img_base_path))
+            images_temp = {
+                Path("..", *(Path(k).parts[-2:])).as_posix(): v
+                for k, v in img_result.items()
+            }
+            outline_config.images[target_id] = images_temp
+            # print(outline_config.images)
+    except Exception as e:
+        logger.warning(f"图片搜索失败: {e} 回退至默认模式")
     html_content = create_html(
         outline_config=outline_config,
         target_id=target_id,

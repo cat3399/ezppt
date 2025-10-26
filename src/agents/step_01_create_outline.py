@@ -5,7 +5,7 @@ import json
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from config.base_config import OUTLINE_LLM_CONFIG
+import config.base_config as base_config
 from config.logging_config import logger
 from src.services.chat.chat import text_chat
 from src.utils.help_utils import response2json, get_prompt
@@ -14,7 +14,7 @@ from src.models.outline_model import Outline
 standard_outline_prompt = get_prompt("outline_prompt")
 
 
-def create_outline(outline_config: Outline, llm_config=OUTLINE_LLM_CONFIG) -> Outline:
+def create_outline(outline_config: Outline, llm_config=base_config.OUTLINE_LLM_CONFIG) -> Outline:
     logger.info("大纲生成中...")
     topic = outline_config.topic
     page_num = outline_config.page_num

@@ -150,6 +150,8 @@ def merge_pdfs(pdf_paths, output_path):
     try:
         with PdfWriter() as pdf_merger:
             for pdf_path in pdf_paths:
+                if not os.path.exists(pdf_path):
+                    continue
                 pdf_merger.append(pdf_path)
             with open(output_path, "wb") as output_file:
                 pdf_merger.write(output_file)
