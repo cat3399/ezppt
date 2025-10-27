@@ -12,6 +12,7 @@ import shutil
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECTS_DIR = BASE_DIR / "data" / "projects"
+PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 WEBUI_DIR = BASE_DIR / "webui"
 ENV_FILE = BASE_DIR / ".env"
 ENV_TEMPLATE_FILE = BASE_DIR / ".env.template"
@@ -32,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+#app.include_router(router)
 
 if PROJECTS_DIR.exists():
     app.mount("/projects", StaticFiles(directory=str(PROJECTS_DIR)), name="projects")
@@ -46,7 +47,7 @@ if WEBUI_DIR.exists():
         app.mount("/css", StaticFiles(directory=str(css_dir)), name="css")
     if js_dir.exists():
         app.mount("/js", StaticFiles(directory=str(js_dir)), name="js")
-
+app.include_router(router)
 
 @app.get("/")
 async def root():
