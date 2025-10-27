@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         projectAudience: document.getElementById('project-audience'),
         projectStyle: document.getElementById('project-style'),
         projectPages: document.getElementById('project-pages'),
+        projectEnableImg: document.getElementById('project-enable-img'),
         projectStatus: document.getElementById('project-status'),
         projectStatusChip: document.getElementById('project-status-chip'),
         projectCreated: document.getElementById('project-created'),
@@ -450,6 +451,9 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.projectAudience.textContent = project.audience || '-';
             elements.projectStyle.textContent = project.style || '-';
             elements.projectPages.textContent = project.page_num || '-';
+            if (elements.projectEnableImg) {
+                elements.projectEnableImg.textContent = project.enable_img_search ? '已启用' : '未启用';
+            }
             elements.projectStatus.textContent = STATUS_MAP[project.status]?.text || project.status || '-';
             elements.projectCreated.textContent = formatDate(project.created_at);
             elements.projectProgress.classList.toggle('progress-fill--completed', project.status === 'completed');
