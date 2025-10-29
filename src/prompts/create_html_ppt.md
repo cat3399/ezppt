@@ -82,7 +82,7 @@
 这些是不可违反的硬性规则。
 
 - **画布与背景 (Canvas & Backdrop)**
-  - **画布 `#canvas`**: 所有内容必须包裹于此。CSS 必须为 `width: 1280px; height: 720px;` 且无任何 `margin`。画布背景色只能是纯色并且非白色。
+  - **画布 `#canvas`**: 所有内容必须包裹于此。CSS 必须为 `width: 1280px; height: 720px;` 且无任何 `margin`。画布背景色只能是纯色
   - **背景 `<body>`**: 必须用于居中画布，样式为 `display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;`
 - **溢出控制 (Overflow Control)**
   - **所有内容必须严格限制在 `#canvas` 1280x720px 的范围内，禁止内容在宽度或高度上超出画布边界**。建议为 `#canvas` 明确设置 `overflow: hidden;`，并在设计及生成 HTML 时合理安排内容、字号、行高及元素间距，避免任何内容、文字或装饰元素超出画布。
@@ -137,7 +137,7 @@
 #### 阶段三：融合与精炼 (Synthesize & Refine)
 
 将你在**阶段一**提取的“设计令牌”应用到**阶段二**执行的“布局结构”中，完成最终设计。
-- **背景**：你必须按照从 `style_reference_html` 提取的色彩体系来设置`canvas`的背景色。并且保持背景的纯净,不得在整个画布的背景上添加任何装饰性元素。
+- **背景**：你必须按照从 `style_reference_html` 提取的色彩体系来设置`canvas`的背景色。并且保持背景的纯净,不得在整个画布的背景上添加任何装饰性元素。如果你负责1.1章节,背景色将由你选择,你需要选择一个符合主题内容的背景色。
 - **图标**：
   - 仅在必要点缀或增强语义时，且必须通过 CDN 引入，用 `<ion-icon>` 标签。
   - CDN: `<script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>`

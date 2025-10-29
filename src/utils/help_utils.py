@@ -184,15 +184,17 @@ def parse_outline(data) -> str:
 
     # 格式化主标题
     main_title = data.get("main_title", "未知演示文稿标题")
-    subtitle = data.get("subtitle", "")
-    target_audience = data.get("target_audience", "未知目标受众")
+    subtitle = data.get("subtitle", "默认")
+    target_audience = data.get("target_audience", "默认")
+    style = data.get("style", "默认")
 
-    output_lines.append("=" * 60)
+    output_lines.append("=" * 5)
     output_lines.append(f"📊 演示文稿标题: {main_title}")
     if subtitle:
         output_lines.append(f"📝 副标题: {subtitle}")
     output_lines.append(f"👥 目标受众: {target_audience}")
-    output_lines.append("=" * 60)
+    output_lines.append(f"🎨 风格: {style}")
+    output_lines.append("=" * 5)
 
     # 检查是否存在 "chapters" 键
     chapters_list = data.get("chapters")
@@ -210,7 +212,7 @@ def parse_outline(data) -> str:
         output_lines.append(
             f"\n📂 第 {chapter_id} 章: {chapter_topic}  (建议页数: {page_count_suggestion})"
         )
-        output_lines.append("-" * 40)
+        output_lines.append("-" * 5)
 
         # 遍历幻灯片
         slides_list = main_chapter.get("slides")

@@ -1,3 +1,4 @@
+import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -62,7 +63,9 @@ def _create_html_with_image(
         if visual_suggestions != {}:
             q = visual_suggestions["search_keywords"]
             d = visual_suggestions["image_description"]
-            img_result = get_pic(query=q, description=d, img_base_path=str(img_base_path))
+            img_result = get_pic(
+                query=q, description=d, img_base_path=str(img_base_path)
+            )
             images_temp = {
                 Path("..", *(Path(k).parts[-2:])).as_posix(): v
                 for k, v in img_result.items()
@@ -164,10 +167,6 @@ def create_project_execute(outline_config: Outline):
 
     try:
         # 提取配置数据
-        global_visual_suggestion = outline_config.outline_json.get(
-            "global_visual_suggestion", {}
-        )
-        outline_config.global_visual_suggestion = global_visual_suggestion
         if not hasattr(outline_config, "enable_img_search"):
             outline_config.enable_img_search = False
 
@@ -176,6 +175,15 @@ def create_project_execute(outline_config: Outline):
             outline_config=outline_config, llm_config=base_config.OUTLINE_LLM_CONFIG
         )
 
+        outline_file.write_text(
+            json.dumps(outline_config.outline_json, ensure_ascii=False, indent=4),
+            encoding="utf-8",
+        )
+        global_visual_suggestion = outline_config.outline_json.get(
+            "global_visual_suggestion", {}
+        )
+        logger.info(f"全局视觉建议: {global_visual_suggestion}")
+        outline_config.global_visual_suggestion = global_visual_suggestion
         # 制定布局规划
         outline_layout = plan_layout(outline_config=outline_config)
         outline_config.outline_layout = outline_layout

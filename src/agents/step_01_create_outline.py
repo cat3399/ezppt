@@ -40,6 +40,8 @@ def create_outline(outline_config: Outline, llm_config=base_config.OUTLINE_LLM_C
     outline_llm_rsp = text_chat(prompt=outline_prompt, llm_config=llm_config)
     # print("大纲模型返回的原始内容：\n", outline_llm_rsp)
     outline_json = response2json(outline_llm_rsp)
+    outline_json["target_audience"] = audience
+    outline_json["style"] = style
 
     # with open(project_root.joinpath("response.json"),'w',encoding="utf-8") as fp:
     #     fp.write(json.dumps(outline_json,ensure_ascii=False,indent=4))
