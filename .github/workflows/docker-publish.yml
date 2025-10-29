@@ -60,6 +60,7 @@ jobs:
     name: Publish manifest
     runs-on: ubuntu-latest
     needs: build
+    if: ${{ always() }}
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -78,8 +79,35 @@ jobs:
           path: .
 
       - name: Create and push multi-arch manifest
+        shell: bash
         run: |
-          echo "Creating manifest for ${IMAGE_NAME}:latest"
-          docker buildx imagetools create -t ${IMAGE_NAME}:latest $(cat refs-*.txt)
+          set -euo pipefail
+          has_amd=false
+          has_arm=false
+          [[ -f refs-amd64.txt ]] && has_amd=true
+          [[ -f refs-arm64.txt ]] && has_arm=true
+
+          if ! docker buildx imagetools inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+            # First publish: create latest from whatever we have
+            if [ "$has_amd" = false ] && [ "$has_arm" = false ]; then
+              echo "No refs files found; nothing to publish." >&2
+              exit 1
+            fi
+            digests=()
+            if [ "$has_amd" = true ]; then digests+=("$(cat refs-amd64.txt)"); fi
+            if [ "$has_arm" = true ]; then digests+=("$(cat refs-arm64.txt)"); fi
+            echo "Creating initial manifest for ${IMAGE_NAME}:latest with: ${digests[*]}"
+            docker buildx imagetools create -t "${IMAGE_NAME}:latest" "${digests[@]}"
+          else
+            # Update only when both arches are present to avoid degrading existing latest
+            if [ "$has_amd" = true ] && [ "$has_arm" = true ]; then
+              d_amd="$(cat refs-amd64.txt)"
+              d_arm="$(cat refs-arm64.txt)"
+              echo "Updating manifest for ${IMAGE_NAME}:latest with: $d_amd $d_arm"
+              docker buildx imagetools create -t "${IMAGE_NAME}:latest" "$d_amd" "$d_arm"
+            else
+              echo "Skipping manifest update to preserve existing 'latest' (missing one arch)."
+            fi
+          fi
       - name: Inspect manifest
         run: docker buildx imagetools inspect ${IMAGE_NAME}:latest
