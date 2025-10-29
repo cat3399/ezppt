@@ -82,32 +82,58 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          has_amd=false
-          has_arm=false
-          [[ -f refs-amd64.txt ]] && has_amd=true
-          [[ -f refs-arm64.txt ]] && has_arm=true
 
-          if ! docker buildx imagetools inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
-            # First publish: create latest from whatever we have
-            if [ "$has_amd" = false ] && [ "$has_arm" = false ]; then
-              echo "No refs files found; nothing to publish." >&2
-              exit 1
-            fi
-            digests=()
-            if [ "$has_amd" = true ]; then digests+=("$(cat refs-amd64.txt)"); fi
-            if [ "$has_arm" = true ]; then digests+=("$(cat refs-arm64.txt)"); fi
-            echo "Creating initial manifest for ${IMAGE_NAME}:latest with: ${digests[*]}"
-            docker buildx imagetools create -t "${IMAGE_NAME}:latest" "${digests[@]}"
-          else
-            # Update only when both arches are present to avoid degrading existing latest
-            if [ "$has_amd" = true ] && [ "$has_arm" = true ]; then
-              d_amd="$(cat refs-amd64.txt)"
-              d_arm="$(cat refs-arm64.txt)"
-              echo "Updating manifest for ${IMAGE_NAME}:latest with: $d_amd $d_arm"
-              docker buildx imagetools create -t "${IMAGE_NAME}:latest" "$d_amd" "$d_arm"
-            else
-              echo "Skipping manifest update to preserve existing 'latest' (missing one arch)."
-            fi
+          # Detect new per-arch digests from this run
+          has_new_amd=false
+          has_new_arm=false
+          [[ -f refs-amd64.txt ]] && has_new_amd=true
+          [[ -f refs-arm64.txt ]] && has_new_arm=true
+
+          new_amd_ref=""
+          new_arm_ref=""
+          if [ "$has_new_amd" = true ]; then new_amd_ref="$(cat refs-amd64.txt)"; fi
+          if [ "$has_new_arm" = true ]; then new_arm_ref="$(cat refs-arm64.txt)"; fi
+
+          # Read existing latest manifest to inherit missing arches
+          old_amd_ref=""
+          old_arm_ref=""
+          if docker buildx imagetools inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+            # Parse verbose output to map platform -> digest reference
+            name=""
+            while IFS= read -r line; do
+              case "$line" in
+                *Name:*)
+                  set +u
+                  name=$(echo "$line" | awk '{print $2}')
+                  set -u
+                  ;;
+                *Platform:*)
+                  plat=$(echo "$line" | awk '{print $2}')
+                  if [ "$plat" = "linux/amd64" ]; then
+                    old_amd_ref="$name"
+                  elif [ "$plat" = "linux/arm64" ]; then
+                    old_arm_ref="$name"
+                  fi
+                  ;;
+              esac
+            done < <(docker buildx imagetools inspect -v "${IMAGE_NAME}:latest")
           fi
+
+          # Prefer new digest if available; otherwise fall back to previous latest
+          amd_ref=${new_amd_ref:-$old_amd_ref}
+          arm_ref=${new_arm_ref:-$old_arm_ref}
+
+          digests=()
+          if [ -n "$amd_ref" ]; then digests+=("$amd_ref"); fi
+          if [ -n "$arm_ref" ]; then digests+=("$arm_ref"); fi
+
+          if [ "${#digests[@]}" -eq 0 ]; then
+            echo "No digests found to publish (no new and no previous)." >&2
+            exit 1
+          fi
+
+          echo "Publishing ${IMAGE_NAME}:latest with the following references:"
+          printf ' - %s\n' "${digests[@]}"
+          docker buildx imagetools create -t "${IMAGE_NAME}:latest" "${digests[@]}"
       - name: Inspect manifest
         run: docker buildx imagetools inspect ${IMAGE_NAME}:latest
