@@ -1,16 +1,16 @@
-import ast
+from functools import wraps
 import json
 import os
 from pathlib import Path
 import re
 import sys
 from urllib.parse import urlparse
-import uuid
 from PIL import Image
 from io import BytesIO
 import base64
 import requests
 from datetime import datetime
+import time
 
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -278,3 +278,49 @@ def time_name() -> str:
     # ts_str = datetime.now().strftime("%Y%m%d")  # 例如 20250907
     ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")  # 例如 20250907_202903
     return ts_str
+
+
+def retry_on_failure(max_attempts=3, delay=1, description="", return_empty_on_fail=True):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt < max_attempts - 1:
+                        logger.warning(
+                            f"{description} 第 {attempt + 1} 次调用失败，{delay}秒后重试... 错误详情: {e}"
+                        )
+                        time.sleep(delay)
+                    else:
+                        logger.error(
+                            f"{description} 达到最大重试次数，调用失败，错误原因: {e}"
+                        )
+                        if not return_empty_on_fail:
+                            raise e
+                        # 尝试从函数的类型注解中获取返回类型
+                        return_type = func.__annotations__.get('return', None)
+                        
+                        # 根据返回类型返回对应的空值
+                        if return_type == list or return_type == 'list':
+                            return []
+                        elif return_type == dict:
+                            return {}
+                        elif return_type == str:
+                            return ""
+                        elif return_type == tuple:
+                            return ()
+                        elif return_type == set:
+                            return set()
+                        elif return_type in (int, float):
+                            return 0
+                        elif return_type == bool:
+                            return False
+                        else:
+                            # 默认返回 None
+                            return None
+
+        return wrapper
+
+    return decorator
