@@ -62,20 +62,19 @@ def chat_openai(
     # print(payload)
     # 设置请求头
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-
-    # 发送请求
     completions_url = f"{api_url}/chat/completions"
-    response = requests.post(
-        completions_url, headers=headers, json=payload, timeout=600
-    )
-
-    # 处理响应
-    if response.status_code == 200:
+    response = None
+    try:
+        # 发送请求
+        response = requests.post(
+            completions_url, headers=headers, json=payload, timeout=600
+        )
+        response.raise_for_status()
         result = response.json()
         return result["choices"][0]["message"]["content"]
-    else:
+    except Exception as e:
         # logger.info(f"API调用失败: {response.status_code} - {response.text}")
-        raise Exception(f"API调用失败: {response.status_code} - {response.text}")
+        raise Exception(f"API调用失败: {response.status_code if response else 'None'} - 响应内容: {response.text if response else 'None'} - 错误信息{e}")
 
 
 if __name__ == "__main__":

@@ -52,7 +52,7 @@ def search_searxng(
             "engines": web_search_engines,  # 网页搜索引擎
             "time_page": time_page,  # 时间分页参数
         }
-
+    response = None
     try:
         # 记录搜索日志
         logger.info(f"正在搜索: '{query}' (语言:{language}, 时间页:{time_page})")
@@ -69,7 +69,7 @@ def search_searxng(
     except Exception as e:
         logger.debug(f"搜索关键词 '{query}' 时发生错误: {str(e)}. ")
         raise Exception(
-            f"搜索关键词 '{query}' 时发生错误: {str(e)}. 响应内容: {response.text}"
+            f"搜索关键词 '{query}' 时发生错误: {str(e)}. 响应内容: {response.text if response else 'None'} 错误信息: {e}"
         )
 
 

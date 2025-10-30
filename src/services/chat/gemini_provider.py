@@ -10,6 +10,7 @@ import config.base_config as base_config
 from config.logging_config import logger
 from src.utils.help_utils import retry_on_failure
 
+
 @retry_on_failure(max_attempts=3, delay=1, description="调用Gemini格式LLM")
 def chat_gemini(
     images_base64: list[str] = [],
@@ -39,13 +40,15 @@ def chat_gemini(
     }
 
     headers = {"Content-Type": "application/json"}
-    url = f"{llm_config.api_url}/v1beta/models/{model}:generateContent?key={api_key}"
+    completions_url = f"{llm_config.api_url}/v1beta/models/{model}:generateContent?key={api_key}"
+    response = None
     try:
-        response = requests.post(url, headers=headers, json=request_body, timeout=600)
+        response = requests.post(completions_url, headers=headers, json=request_body, timeout=600)
+        response.raise_for_status()
         return response.json()["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
         # logger.error(f"API调用失败: {response.status_code} - {response.text}")
-        raise Exception(f"API调用失败: {response.status_code} - {response.text}")
+        raise Exception(f"API调用失败: {response.status_code if response else 'None'} - 响应内容: {response.text if response else 'None'} - 错误信息{e}")
 
         # traceback.print_exc()
     # print("返回的内容为",response.content)
