@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const elements = {
         loader: document.getElementById('global-loader'),
-        messageBar: document.getElementById('message-bar'),
         backHome: document.getElementById('back-home'),
         reload: document.getElementById('reload-config'),
         save: document.getElementById('save-config'),
@@ -55,20 +54,22 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.loader?.classList.toggle('hidden', !visible);
     };
 
-    const showMessage = (text, type = 'info') => {
-        if (!elements.messageBar) return;
-        const classMap = {
-            info: 'message-info',
-            success: 'message-success',
-            error: 'message-error',
-        };
-        if (!text) {
-            elements.messageBar.textContent = '';
-            elements.messageBar.className = 'message-bar hidden';
+    const notifier = window.createNotifier ? window.createNotifier() : null;
+
+    const showMessage = (text, type = 'info', options = {}) => {
+        if (!notifier) {
             return;
         }
-        elements.messageBar.textContent = text;
-        elements.messageBar.className = `message-bar ${classMap[type] || classMap.info}`;
+        if (!text) {
+            notifier.clear();
+            return;
+        }
+        const normalizedType = type || 'info';
+        if (normalizedType === 'info' && !options.force) {
+            return;
+        }
+        const { force, ...restOptions } = options;
+        notifier.show(text, normalizedType, restOptions);
     };
 
     const fetchConfig = async () => {
@@ -363,11 +364,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveConfig = async () => {
         const updates = collectUpdates();
         if (!Object.keys(updates).length) {
-            showMessage('没有需要保存的更改', 'info');
+            showMessage('没有需要保存的更改', 'info', { force: true });
             return;
         }
         showLoader(true);
-        showMessage('正在保存配置...', 'info');
+        showMessage('正在保存配置...', 'info', { force: true });
         try {
             const res = await apiFetch('/api/config', {
                 method: 'POST',

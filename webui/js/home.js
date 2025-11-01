@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         projectList: document.getElementById('project-list'),
         projectSearch: document.getElementById('project-search'),
         projectsPlaceholder: document.getElementById('sidebar-placeholder'),
-        messageBar: document.getElementById('message-bar'),
         welcomePanel: document.getElementById('welcome-panel'),
         projectPanel: document.getElementById('project-panel'),
         outlinePanel: document.getElementById('outline-panel'),
@@ -161,19 +160,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
     };
 
-    const showMessage = (text, type = 'info') => {
-        const classMap = {
-            info: 'message-info',
-            success: 'message-success',
-            error: 'message-error',
-        };
-        if (!text) {
-            elements.messageBar.className = 'message-bar hidden';
-            elements.messageBar.textContent = '';
+    const notifier = window.createNotifier ? window.createNotifier() : null;
+
+    const showMessage = (text, type = 'info', options = {}) => {
+        if (!notifier) {
             return;
         }
-        elements.messageBar.className = `message-bar ${classMap[type] || classMap.info}`;
-        elements.messageBar.textContent = text;
+        if (!text) {
+            notifier.clear();
+            return;
+        }
+        const normalizedType = type || 'info';
+        if (normalizedType === 'info' && !options.force) {
+            return;
+        }
+        const { force, ...restOptions } = options;
+        notifier.show(text, normalizedType, restOptions);
     };
 
     const formatDate = (iso) => {
@@ -550,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (otherButton) {
             otherButton.disabled = true;
         }
-        showMessage(`正在导出 ${labelMap[type] || type.toUpperCase()}...`, 'info');
+        showMessage(`正在导出 ${labelMap[type] || type.toUpperCase()}...`, 'info', { force: true });
         try {
             const res = await apiFetch(`/api/projects/${state.selectedProjectId}/export/${type}`);
             if (!res.ok) throw new Error(`导出 ${labelMap[type] || type.toUpperCase()} 失败 (${res.status})`);
@@ -558,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.status === 'completed') {
                 showMessage(`${labelMap[type] || type.toUpperCase()} 导出完成`, 'success');
             } else {
-                showMessage(`${labelMap[type] || type.toUpperCase()} 导出任务已启动`, 'info');
+                showMessage(`${labelMap[type] || type.toUpperCase()} 导出任务已启动`, 'info', { force: true });
             }
         } catch (error) {
             console.error(error);
@@ -649,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.restartProject.disabled = true;
                 elements.restartProject.setAttribute('aria-disabled', 'true');
                 showLoader(true);
-                showMessage('正在重新生成项目...', 'info');
+                showMessage('正在重新生成项目...', 'info', { force: true });
                 try {
                     const res = await apiFetch(`/api/projects/${state.selectedProjectId}/restart`, {
                         method: 'POST',
@@ -687,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.deleteProject.disabled = true;
                 elements.deleteProject.setAttribute('aria-disabled', 'true');
                 showLoader(true);
-                showMessage('正在删除项目...', 'info');
+                showMessage('正在删除项目...', 'info', { force: true });
                 try {
                     const res = await apiFetch(`/api/projects/${state.selectedProjectId}`, {
                         method: 'DELETE',
@@ -745,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         btn.disabled = true;
-        showMessage(`正在重新生成幻灯片 ${slideId}...`, 'info');
+        showMessage(`正在重新生成幻灯片 ${slideId}...`, 'info', { force: true });
         try {
             const encodedSlideId = encodeURIComponent(slideId);
             const res = await apiFetch(`/api/projects/${state.selectedProjectId}/slides/${encodedSlideId}/restart`, {
@@ -809,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.createSubmit.disabled = true;
         elements.createSubmit.textContent = '创建中...';
         showLoader(true);
-        showMessage('正在创建新项目...', 'info');
+        showMessage('正在创建新项目...', 'info', { force: true });
 
         try {
             const res = await apiFetch('/api/projects', {
