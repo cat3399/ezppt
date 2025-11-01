@@ -18,6 +18,7 @@ from config.base_config import (
     get_runtime_overrides,
     update_runtime_overrides,
 )
+from src.utils import settings_tester
 from src.utils.help_utils import time_name
 from src.models.project_model import Project, ProjectIn
 from src.models.outline_model import Outline
@@ -296,6 +297,23 @@ def update_config_items(payload: ConfigUpdateRequest):
             for item in CONFIG_ITEMS
         ],
     }
+
+
+@router.get("/api/config/tests")
+def list_config_tests():
+    return {"tests": settings_tester.list_tests()}
+
+
+@router.post("/api/config/tests/{test_key}")
+def run_config_test(test_key: str):
+    try:
+        result = settings_tester.run_test(test_key)
+        return result
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="未找到对应的检测项") from exc
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("配置检测 %s 失败", test_key)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.get("/api/projects/{project_id}/status")

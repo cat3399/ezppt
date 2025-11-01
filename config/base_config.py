@@ -168,7 +168,7 @@ CONFIG_ITEMS = [
         "label": "图片数量限制",
         "type": "number",
         "group": "图片模型",
-        "description": "搜索时返回的图片数量限制",
+        "description": "提供给模型的图片数量限制,部分api厂商可能仅支持少量图片",
     },
     {
         "key": "SEARXNG_URL",

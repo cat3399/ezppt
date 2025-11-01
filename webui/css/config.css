@@ -119,3 +119,21 @@
     background: rgba(148, 163, 184, 0.1);
     border-radius: 12px;
 }
+
+.config-form-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0 18px;
+}
+
+.config-test-status {
+    font-size: 13px;
+    color: var(--danger);
+}
+
+.config-form-header.hidden,
+.config-test-status.hidden {
+    display: none !important;
+}

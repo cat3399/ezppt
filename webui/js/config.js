@@ -4,6 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
         values: {},
         dirty: new Set(),
         currentGroup: null,
+        tests: {
+            items: [],
+            metaByKey: {},
+            results: {},
+            runningKey: null,
+            loading: false,
+            loaded: false,
+            error: null,
+        },
     };
 
     const LIMITED_API_TYPE_KEYS = new Set([
@@ -14,6 +23,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_TYPE_OPTIONS = ['openai', 'gemini'];
 
+    const TEST_GROUP_MAP = {
+        '大纲模型': 'outline_llm',
+        'PPT 模型': 'ppt_llm',
+        '图片模型': 'pic_llm',
+        '搜索': 'img_search',
+    };
+
+    const DEFAULT_TEST_LABELS = {
+        outline_llm: '大纲 LLM 检测',
+        ppt_llm: 'PPT LLM 检测',
+        pic_llm: '图片理解模型检测',
+        img_search: '图片搜索检测',
+    };
+
     const elements = {
         loader: document.getElementById('global-loader'),
         messageBar: document.getElementById('message-bar'),
@@ -23,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
         form: document.getElementById('config-form'),
         groupTabs: document.getElementById('group-tabs'),
         template: document.getElementById('config-item-template'),
+        formHeader: document.getElementById('config-form-header'),
+        testButton: document.getElementById('config-test-button'),
+        testStatus: document.getElementById('config-test-status'),
     };
 
     const showLoader = (visible) => {
@@ -99,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             empty.className = 'config-empty';
             empty.textContent = '该分类暂无配置项。';
             elements.form.appendChild(empty);
+            renderGroupTest(group);
             return;
         }
 
@@ -167,6 +194,143 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.form.appendChild(fragment);
         updateSaveButton();
+        renderGroupTest(group);
+    };
+
+    const formatTestDetail = (text) => {
+        if (!text) return '';
+        const normalized = String(text).trim();
+        if (!normalized) return '';
+        return normalized.length > 160 ? `${normalized.slice(0, 157)}...` : normalized;
+    };
+
+    function renderGroupTest(group) {
+        if (!elements.formHeader || !elements.testButton || !elements.testStatus) {
+            return;
+        }
+        const header = elements.formHeader;
+        const button = elements.testButton;
+        const status = elements.testStatus;
+
+        const testKey = TEST_GROUP_MAP[group] || null;
+        if (!testKey) {
+            header.classList.add('hidden');
+            button.dataset.testKey = '';
+            button.disabled = true;
+            status.textContent = '';
+            status.classList.add('hidden');
+            return;
+        }
+
+        header.classList.remove('hidden');
+        button.dataset.testKey = testKey;
+
+        const meta =
+            state.tests.metaByKey[testKey] ||
+            state.tests.items.find((item) => item.key === testKey) ||
+            null;
+        if (meta) {
+            state.tests.metaByKey[testKey] = meta;
+        }
+
+        const defaultLabel = DEFAULT_TEST_LABELS[testKey] || '执行检测';
+        const label = meta?.label || defaultLabel;
+        const isRunning = state.tests.runningKey === testKey;
+        const otherRunning = Boolean(state.tests.runningKey && state.tests.runningKey !== testKey);
+
+        if (state.tests.loading && !state.tests.loaded && !meta) {
+            button.textContent = '检测项加载中...';
+            button.disabled = true;
+        } else {
+            button.textContent = isRunning ? '检测中...' : label;
+            button.disabled = isRunning || otherRunning;
+        }
+
+        const result = state.tests.results[testKey];
+        if (result && !result.success) {
+            const detailText = formatTestDetail(result.detail);
+            status.textContent = detailText ? `检测失败：${detailText}` : '检测失败';
+            status.classList.remove('hidden');
+        } else if (state.tests.error && !meta && !state.tests.loading) {
+            status.textContent = state.tests.error;
+            status.classList.remove('hidden');
+        } else {
+            status.textContent = '';
+            status.classList.add('hidden');
+        }
+    }
+
+    const runTest = async (testKey) => {
+        if (!testKey || state.tests.runningKey) {
+            return;
+        }
+        const meta =
+            state.tests.metaByKey[testKey] ||
+            state.tests.items.find((item) => item.key === testKey) ||
+            null;
+        const label = meta?.label || DEFAULT_TEST_LABELS[testKey] || '功能检测';
+
+        state.tests.runningKey = testKey;
+        renderGroupTest(state.currentGroup);
+        try {
+            const res = await apiFetch(`/api/config/tests/${testKey}`, { method: 'POST' });
+            if (!res.ok) {
+                let detail = `检测失败 (${res.status})`;
+                try {
+                    const errorBody = await res.json();
+                    if (errorBody?.detail) {
+                        detail = errorBody.detail;
+                    }
+                } catch {
+                    // ignore JSON parse errors
+                }
+                throw new Error(detail);
+            }
+            await res.json();
+            delete state.tests.results[testKey];
+            showMessage(`${label} 检测成功`, 'success');
+        } catch (error) {
+            console.error(error);
+            state.tests.results[testKey] = {
+                success: false,
+                detail: error.message || '',
+            };
+            showMessage(error.message || `${label} 检测失败`, 'error');
+        } finally {
+            state.tests.runningKey = null;
+            renderGroupTest(state.currentGroup);
+        }
+    };
+
+    const fetchTests = async () => {
+        state.tests.loading = true;
+        state.tests.error = null;
+        renderGroupTest(state.currentGroup);
+        try {
+            const res = await apiFetch('/api/config/tests');
+            if (!res.ok) throw new Error(`检测项加载失败 (${res.status})`);
+            const data = await res.json();
+            const tests = Array.isArray(data?.tests) ? data.tests : [];
+            state.tests.items = tests;
+            state.tests.metaByKey = tests.reduce((acc, item) => {
+                acc[item.key] = item;
+                return acc;
+            }, {});
+            const validKeys = new Set(tests.map((item) => item.key));
+            Object.keys(state.tests.results).forEach((key) => {
+                if (!validKeys.has(key)) {
+                    delete state.tests.results[key];
+                }
+            });
+            state.tests.loaded = true;
+        } catch (error) {
+            console.error(error);
+            state.tests.error = error.message || '检测项加载失败';
+            state.tests.loaded = true;
+        } finally {
+            state.tests.loading = false;
+            renderGroupTest(state.currentGroup);
+        }
     };
 
     const updateSaveButton = () => {
@@ -231,6 +395,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.reload?.addEventListener('click', () => {
         fetchConfig();
+        fetchTests();
+    });
+
+    elements.testButton?.addEventListener('click', () => {
+        if (elements.testButton.disabled) {
+            return;
+        }
+        const { testKey } = elements.testButton.dataset;
+        if (testKey) {
+            runTest(testKey);
+        }
     });
 
     elements.save?.addEventListener('click', () => {
@@ -241,4 +416,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     fetchConfig();
+    fetchTests();
 });
