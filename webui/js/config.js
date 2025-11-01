@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         form: document.getElementById('config-form'),
         groupTabs: document.getElementById('group-tabs'),
         template: document.getElementById('config-item-template'),
-        formHeader: document.getElementById('config-form-header'),
+        testFooter: document.getElementById('config-test-footer'),
         testButton: document.getElementById('config-test-button'),
         testStatus: document.getElementById('config-test-status'),
     };
@@ -206,16 +206,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function renderGroupTest(group) {
-        if (!elements.formHeader || !elements.testButton || !elements.testStatus) {
+        if (!elements.testFooter || !elements.testButton || !elements.testStatus) {
             return;
         }
-        const header = elements.formHeader;
+        const footer = elements.testFooter;
         const button = elements.testButton;
         const status = elements.testStatus;
 
         const testKey = TEST_GROUP_MAP[group] || null;
         if (!testKey) {
-            header.classList.add('hidden');
+            footer.classList.add('hidden');
             button.dataset.testKey = '';
             button.disabled = true;
             status.textContent = '';
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        header.classList.remove('hidden');
+        footer.classList.remove('hidden');
         button.dataset.testKey = testKey;
 
         const meta =

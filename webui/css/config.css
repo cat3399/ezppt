@@ -120,20 +120,29 @@
     border-radius: 12px;
 }
 
-.config-form-header {
+.config-test-footer {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 12px;
-    margin: 12px 0 18px;
+    gap: 14px;
+    margin-top: 16px;
+    padding-top: 6px;
+    flex-wrap: wrap;
 }
 
 .config-test-status {
     font-size: 13px;
     color: var(--danger);
+    flex: 1 1 240px;
+    line-height: 1.45;
+    text-align: left;
 }
 
-.config-form-header.hidden,
+.config-test-button {
+    white-space: nowrap;
+}
+
+.config-test-footer.hidden,
 .config-test-status.hidden {
     display: none !important;
 }
