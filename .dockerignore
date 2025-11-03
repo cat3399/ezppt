@@ -1,0 +1,26 @@
+# VCS
+.git
+.github/
+.gitignore
+
+# Python: bytecode, caches, venvs
+__pycache__/
+**/__pycache__/
+.venv/
+.python-version
+
+# Editors/OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Environment & logs
+.env
+*.log
+
+# Project runtime data (mount as a volume instead)
+examples/
+data/
