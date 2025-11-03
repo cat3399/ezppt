@@ -481,22 +481,57 @@ def export_project_to_pdf(project_id: str, background_tasks: BackgroundTasks):
 
 
 @router.get("/api/projects/{project_id}/export/pptx")
-def export_project_to_pptx(project_id: str, background_tasks: BackgroundTasks):
+def export_project_to_pptx(
+    project_id: str, background_tasks: BackgroundTasks, force: bool = False
+):
     project = project_repo.db_get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     if project.status != Status.completed:
         raise HTTPException(status_code=400, detail="项目未完成,不能导出PPTX!")
-    if project.pptx_status == Status.completed:
-        return {"project_id": project_id, "status": Status.completed}
-    if project.pptx_status == Status.generating:
-        return {"project_id": project_id, "status": Status.generating}
+    # 非强制：保留现有快速返回逻辑
+    if not force:
+        if project.pptx_status == Status.completed:
+            return {"project_id": project_id, "status": Status.completed}
+        if project.pptx_status == Status.generating:
+            return {"project_id": project_id, "status": Status.generating}
+        started = project_repo.db_try_start_pptx_export(project_id)
+        if not started:
+            return {"project_id": project_id, "status": Status.generating}
+        logger.info(f"开始导出项目 {project_id} 到 PPTX")
+    else:
+        # 强制：如有进行中的导出直接返回，避免与现有任务冲突
+        if project.pptx_status == Status.generating or project.pdf_status == Status.generating:
+            return {"project_id": project_id, "status": Status.generating}
 
-    started = project_repo.db_try_start_pptx_export(project_id)
-    if not started:
-        return {"project_id": project_id, "status": Status.generating}
+        # 删除现有 PDF/PPTX 文件
+        try:
+            base_path = PROJECTS_ROOT / project.project_name
+            pdf_path = base_path / f"{project.project_name}.pdf"
+            pptx_path = base_path / f"{project.project_name}.pptx"
+            for f in (pdf_path, pptx_path):
+                if f.exists():
+                    f.unlink()
+                    logger.info(f"强制导出：已删除旧文件 {f}")
+        except Exception as exc:
+            logger.warning(f"强制导出：删除旧文件时出错: {exc}")
 
-    logger.info(f"开始导出项目 {project_id} 到 PPTX")
+        # 重置并启动 PDF/PPTX 状态
+        project_repo.db_update_project(
+            project_id,
+            new_pdf_status=Status.pending,
+            new_pptx_status=Status.pending,
+        )
+        # 置为 generating（放宽允许状态，包含 completed）
+        project_repo.db_try_start_pdf_export(
+            project_id, allowed_statuses=(Status.pending, Status.failed, Status.completed)
+        )
+        started = project_repo.db_try_start_pptx_export(
+            project_id, allowed_statuses=(Status.pending, Status.failed, Status.completed)
+        )
+        if not started:
+            return {"project_id": project_id, "status": Status.generating}
+        logger.info(f"开始强制导出项目 {project_id} 到 PPTX（将同时重新生成 PDF）")
     background_tasks.add_task(
         html2office, project_id=project_id, to_pdf=True, to_pptx=True
     )

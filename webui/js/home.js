@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exportPdf: document.getElementById('export-pdf'),
         downloadPdf: document.getElementById('download-pdf'),
         exportPptx: document.getElementById('export-pptx'),
+        forceExportPptx: document.getElementById('force-export-pptx'),
         downloadPptx: document.getElementById('download-pptx'),
         outlineContent: document.getElementById('outline-content'),
         toggleOutline: document.getElementById('toggle-outline'),
@@ -77,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.deleteProject?.setAttribute('disabled', 'true');
     elements.exportPdf.disabled = true;
     elements.exportPptx.disabled = true;
+    elements.forceExportPptx && (elements.forceExportPptx.disabled = true);
     elements.downloadPdf.disabled = true;
     elements.downloadPptx.disabled = true;
 
@@ -361,6 +363,10 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.exportPdf.textContent = pdfGenerating ? '导出中...' : '导出为 PDF';
         elements.exportPptx.disabled = !projectReady || pptxGenerating || pdfGenerating;
         elements.exportPptx.textContent = pptxGenerating ? '导出中...' : '导出为 PPTX';
+        if (elements.forceExportPptx) {
+            elements.forceExportPptx.disabled = !projectReady || pptxGenerating || pdfGenerating;
+            elements.forceExportPptx.textContent = pptxGenerating ? '导出中...' : '强制重新导出 PPTX';
+        }
 
         elements.downloadPdf.disabled = !pdfReady;
         elements.downloadPdf.setAttribute('aria-disabled', pdfReady ? 'false' : 'true');
@@ -532,12 +538,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return `/projects/${encodedDir}/${encodedFile}`;
     };
 
-    const triggerExport = async (type) => {
+    const triggerExport = async (type, opts = {}) => {
         if (!state.selectedProjectId) {
             return;
         }
-        const button = type === 'pdf' ? elements.exportPdf : elements.exportPptx;
+        const { force = false, button: buttonOverride } = opts || {};
+        const button = buttonOverride || (type === 'pdf' ? elements.exportPdf : elements.exportPptx);
         const otherButton = type === 'pdf' ? elements.exportPptx : elements.exportPdf;
+        const forceButton = elements.forceExportPptx;
         if (!button || button.disabled) {
             return;
         }
@@ -547,14 +555,22 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const defaultLabel = type === 'pdf' ? '导出为 PDF' : '导出为 PPTX';
         const otherOriginalDisabled = otherButton ? otherButton.disabled : undefined;
+        const forceOriginalDisabled = forceButton ? forceButton.disabled : undefined;
         button.disabled = true;
         button.textContent = '导出中...';
         if (otherButton) {
             otherButton.disabled = true;
         }
+        if (forceButton) {
+            // 当执行任意PPTX导出（含强制）时，同时禁用另一个PPTX导出按钮
+            if (type === 'pptx') {
+                forceButton.disabled = true;
+            }
+        }
         showMessage(`正在导出 ${labelMap[type] || type.toUpperCase()}...`, 'info', { force: true });
         try {
-            const res = await apiFetch(`/api/projects/${state.selectedProjectId}/export/${type}`);
+            const url = `/api/projects/${state.selectedProjectId}/export/${type}${force ? '?force=1' : ''}`;
+            const res = await apiFetch(url);
             if (!res.ok) throw new Error(`导出 ${labelMap[type] || type.toUpperCase()} 失败 (${res.status})`);
             const data = await res.json();
             if (data.status === 'completed') {
@@ -572,6 +588,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.textContent = defaultLabel;
                 if (otherButton && otherOriginalDisabled !== undefined) {
                     otherButton.disabled = otherOriginalDisabled;
+                }
+                if (forceButton && forceOriginalDisabled !== undefined) {
+                    forceButton.disabled = forceOriginalDisabled;
                 }
             }
         }
@@ -600,6 +619,23 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.exportPptx.addEventListener('click', () => {
         triggerExport('pptx');
     });
+    if (elements.forceExportPptx) {
+        elements.forceExportPptx.addEventListener('click', () => {
+            if (!state.selectedProjectId || elements.forceExportPptx.disabled) {
+                return;
+            }
+            // 关闭操作菜单，打开二次确认
+            setActionMenuVisibility(false);
+            openConfirmModal({
+                title: '强制重新导出 PPTX',
+                message: '将删除现有 PDF 与 PPTX 并重新生成。该操作适用于修改 HTML 后再次导出 PPTX，确定继续吗？',
+                onConfirm: async () => {
+                    elements.forceExportPptx.disabled = true;
+                    triggerExport('pptx', { force: true, button: elements.forceExportPptx });
+                },
+            });
+        });
+    }
     elements.downloadPdf.addEventListener('click', () => {
         if (!state.projectDetail || state.projectDetail.pdf_status !== 'completed') {
             showMessage('PDF 尚未生成完成，无法下载', 'error');
